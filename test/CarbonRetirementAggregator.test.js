@@ -9,9 +9,6 @@ const { ethers, upgrades } = require("hardhat");
 require("chai").use(require("chai-as-promised")).should();
 
 describe("Lock", function () {
-  // We define a fixture to reuse the same setup in every test.
-  // We use loadFixture to run this setup once, snapshot that state,
-  // and reset Hardhat Network to that snapshot in every test.
   const zeroAddress = "0x0000000000000000000000000000000000000000";
   const feeAmount = 100; //1%
   const toucanFee = 2500; //25%
@@ -47,6 +44,7 @@ describe("Lock", function () {
       account19,
       account20,
     ] = await ethers.getSigners();
+
     const deployerAccount = account1;
     const treasury = account20;
     const manager = account19;
@@ -54,52 +52,30 @@ describe("Lock", function () {
     const feeRedeemRecieverAccount = account17;
     const feeRedeemBurnAccount = account16;
 
-    /////////////////////////////////////-------------------------------------- uniswap
+    //---------------------------------- uniswap deployment ----------------------------------
 
     const Token = await ethers.getContractFactory("Weth");
     const Factory = await ethers.getContractFactory("Factory");
-
     const UniswapV2Router02New = await ethers.getContractFactory(
       "UniswapV2Router02New"
     );
+
     const TestUniswap = await ethers.getContractFactory("TestUniswap");
-
     const wethDexInstance = await Token.deploy("WETH", "weth");
-
-    const WETHAddress = wethDexInstance.address;
-
     const daiDexInstance = await Token.deploy("DAI", "dai");
-
-    const DAIAddress = daiDexInstance.address;
-
     const usdcDexInstance = await Token.deploy("USDC", "usdc");
-
-    const USDCAddress = usdcDexInstance.address;
-
-    const fakeTokenDexInstance = await Token.deploy("FAKETOKEN", "fake token");
-
-    const FAKETOKENAddress = fakeTokenDexInstance.address;
-
     const factoryInstance = await Factory.deploy(account2.address);
     const factoryAddress = factoryInstance.address;
 
-    const factoryInstance2 = await Factory.deploy(account2.address);
-    const factoryAddress2 = factoryInstance2.address;
-
     const dexRouterInstance = await UniswapV2Router02New.deploy(
       factoryAddress,
-      WETHAddress
+      wethDexInstance.address
     );
 
     const dexRouterAddress = dexRouterInstance.address;
 
     const testUniswapInstance = await TestUniswap.deploy(dexRouterAddress);
     const testUniswapAddress = testUniswapInstance.address;
-    //--------------------------- token list ---------------
-
-    //--------------------------- deploy factory ---------------
-
-    //--------------------------- dex list ---------------
 
     await wethDexInstance.setMint(
       testUniswapAddress,
@@ -129,12 +105,6 @@ describe("Lock", function () {
       ethers.utils.parseUnits("250000000", "ether"),
       ethers.utils.parseUnits("250000000", "ether")
     );
-
-    //--------------------------- add liquidity for router 2 ---------------
-
-    ///////////////////------------------------------------------------------
-
-    //---------------------------------- uniswap deployment -------------------------------
 
     //retirment deployment
 
@@ -238,7 +208,10 @@ describe("Lock", function () {
     );
 
     //set usdc address
-    await carbonRetirementAggratorInstance.setAddress(0, USDCAddress);
+    await carbonRetirementAggratorInstance.setAddress(
+      0,
+      usdcDexInstance.address
+    );
     //set treasury address
     await carbonRetirementAggratorInstance.setAddress(1, treasury.address);
 
@@ -415,12 +388,6 @@ describe("Lock", function () {
         1
       );
 
-      // address to,
-      // uint256 projectVintageTokenId,
-      // string memory _serialNumber,
-      // uint256 quantity,
-      // string memory uri
-
       await carbonOffsetBatchesInstance.mintBatchWithData(
         planter.address,
         1,
@@ -504,8 +471,6 @@ describe("Lock", function () {
           retirementMessage1,
           carbonList
         );
-
-      let certificateOwner = await retirementCertificatesInstance.ownerOf(1);
     });
   });
 });
