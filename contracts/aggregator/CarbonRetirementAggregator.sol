@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.6;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
@@ -10,11 +9,12 @@ import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/IRetireBridgeCommon.sol";
 import "./interfaces/IRetireCarbon.sol";
 
-contract CarbonRetirementAggregator is Initializable, OwnableUpgradeable {
+contract CarbonRetirementAggregator is OwnableUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     function initialize() public initializer {
-        __Ownable_init();
+        __Context_init_unchained();
+        __Ownable_init_unchained();
     }
 
     address public USDC;

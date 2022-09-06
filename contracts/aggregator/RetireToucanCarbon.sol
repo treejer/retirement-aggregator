@@ -17,17 +17,12 @@ import "./interfaces/IToucanPool.sol";
 import "./interfaces/IToucanCarbonOffsets.sol";
 import "./interfaces/ICarbonRetirementAggregator.sol";
 
-contract RetireToucanCarbon is
-    Initializable,
-    ContextUpgradeable,
-    OwnableUpgradeable,
-    IERC721ReceiverUpgradeable
-{
+contract RetireToucanCarbon is OwnableUpgradeable, IERC721ReceiverUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     function initialize() public initializer {
-        __Ownable_init();
-        __Context_init();
+        __Context_init_unchained();
+        __Ownable_init_unchained();
     }
 
     uint256 public feeAmount;
