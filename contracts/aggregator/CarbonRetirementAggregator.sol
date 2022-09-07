@@ -328,13 +328,12 @@ contract CarbonRetirementAggregator is
     function setAddress(uint256 _selection, address _newAddress)
         external
         onlyOwner
-        returns (bool)
     {
         address oldAddress;
 
         if (_selection == 0) {
             oldAddress = USDC;
-            USDC = _newAddress; // 3; Set new USDC address
+            USDC = _newAddress;
         } else if (_selection == 1) {
             oldAddress = treasury;
             treasury = _newAddress;
@@ -342,23 +341,26 @@ contract CarbonRetirementAggregator is
             oldAddress = carbonRetirementStorage;
             carbonRetirementStorage = _newAddress;
         } else {
-            return false;
+            revert("CRT:Selection must be less than 3");
         }
 
         emit AddressUpdated(_selection, oldAddress, _newAddress);
-
-        return true;
     }
 
     function addPool(address _poolToken, address _bridgeHelper)
         external
         onlyOwner
     {
-        require(_poolToken != address(0), "Pool cannot be zero address");
+        require(_poolToken != address(0), "CRT:Pool cannot be zero address");
+
+        require(
+            _bridgeHelper != address(0),
+            "CRT:Bridge cannot be zero address"
+        );
 
         require(
             poolTokenTobridgeHelper[_poolToken] == address(0),
-            "Pool already added"
+            "CRT:Pool already added"
         );
 
         poolTokenTobridgeHelper[_poolToken] = _bridgeHelper;

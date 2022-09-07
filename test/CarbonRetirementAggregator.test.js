@@ -3,10 +3,222 @@ const {
   loadFixture,
 } = require("@nomicfoundation/hardhat-network-helpers");
 const { anyValue } = require("@nomicfoundation/hardhat-chai-matchers/withArgs");
+const { expect } = require("chai");
 
 const { ethers, upgrades } = require("hardhat");
 
+const assert = require("chai").assert;
 require("chai").use(require("chai-as-promised")).should();
+
+const {
+  OwnableErrorMsg,
+  CarbonRetirementAggregatorErrorMsg,
+} = require("./enumes");
+
+describe("without deploy toucan contrct", function () {
+  const zeroAddress = "0x0000000000000000000000000000000000000000";
+
+  async function handleDeploymentsAndSetAddress() {
+    const [account1, account2, account3, account4, account5] =
+      await ethers.getSigners();
+
+    const CarbonRetirementAggregator = await ethers.getContractFactory(
+      "CarbonRetirementAggregator",
+      account1,
+    );
+
+    const carbonRetirementAggratorInstance = await upgrades.deployProxy(
+      CarbonRetirementAggregator,
+      {
+        kind: "uups",
+        initializer: "initialize",
+      },
+    );
+
+    return {
+      account1,
+      account2,
+      account3,
+      account4,
+      account5,
+      carbonRetirementAggratorInstance,
+    };
+  }
+
+  it.only("write test for setAddress", async () => {
+    let {
+      account1,
+      account2,
+      account3,
+      account4,
+      account5,
+      carbonRetirementAggratorInstance,
+    } = await loadFixture(handleDeploymentsAndSetAddress);
+
+    //------rejected(only owner can call setAddress)
+
+    await carbonRetirementAggratorInstance
+      .connect(account2)
+      .setAddress(0, account2.address)
+      .should.be.rejectedWith(OwnableErrorMsg.CALLER_NOT_OWNER);
+
+    //------rejected(_selection must be less than 2)
+
+    await carbonRetirementAggratorInstance
+      .connect(account1)
+      .setAddress(3, account2.address)
+      .should.be.rejectedWith(
+        CarbonRetirementAggregatorErrorMsg.CRT_SELECTION_LIMIT,
+      );
+
+    //------change USDC
+
+    assert.equal(
+      await carbonRetirementAggratorInstance.USDC(),
+      zeroAddress,
+      "USDC address is incorrect",
+    );
+
+    let tx1 = await carbonRetirementAggratorInstance
+      .connect(account1)
+      .setAddress(0, account2.address);
+
+    await expect(tx1)
+      .to.emit(carbonRetirementAggratorInstance, "AddressUpdated")
+      .withArgs(0, zeroAddress, account2.address);
+
+    assert.equal(
+      await carbonRetirementAggratorInstance.USDC(),
+      account2.address,
+      "USDC address is incorrect",
+    );
+
+    assert.equal(
+      await carbonRetirementAggratorInstance.treasury(),
+      zeroAddress,
+      "treasury address is incorrect",
+    );
+
+    //------change treasury
+
+    assert.equal(
+      await carbonRetirementAggratorInstance.treasury(),
+      zeroAddress,
+      "treasury address is incorrect",
+    );
+
+    let tx2 = await carbonRetirementAggratorInstance
+      .connect(account1)
+      .setAddress(1, account3.address);
+
+    await expect(tx2)
+      .to.emit(carbonRetirementAggratorInstance, "AddressUpdated")
+      .withArgs(1, zeroAddress, account3.address);
+
+    assert.equal(
+      await carbonRetirementAggratorInstance.treasury(),
+      account3.address,
+      "treasury address is incorrect",
+    );
+
+    assert.equal(
+      await carbonRetirementAggratorInstance.carbonRetirementStorage(),
+      zeroAddress,
+      "carbonRetirementStorage address is incorrect",
+    );
+
+    //------change carbonRetirementStorage
+
+    assert.equal(
+      await carbonRetirementAggratorInstance.carbonRetirementStorage(),
+      zeroAddress,
+      "carbonRetirementStorage address is incorrect",
+    );
+
+    let tx3 = await carbonRetirementAggratorInstance
+      .connect(account1)
+      .setAddress(2, account4.address);
+
+    await expect(tx3)
+      .to.emit(carbonRetirementAggratorInstance, "AddressUpdated")
+      .withArgs(2, zeroAddress, account4.address);
+
+    assert.equal(
+      await carbonRetirementAggratorInstance.carbonRetirementStorage(),
+      account4.address,
+      "carbonRetirementStorage address is incorrect",
+    );
+
+    //-------change carbonRetirementStorage 2
+
+    let tx4 = await carbonRetirementAggratorInstance
+      .connect(account1)
+      .setAddress(2, account5.address);
+
+    await expect(tx4)
+      .to.emit(carbonRetirementAggratorInstance, "AddressUpdated")
+      .withArgs(2, account4.address, account5.address);
+  });
+
+  it.only("test addPool", async () => {
+    let {
+      account1,
+      account2,
+      account3,
+      account4,
+      account5,
+      carbonRetirementAggratorInstance,
+    } = await loadFixture(handleDeploymentsAndSetAddress);
+
+    //------------reject (only owner )
+    await carbonRetirementAggratorInstance
+      .connect(account2)
+      .addPool(account2.address, account3.address)
+      .should.be.rejectedWith(OwnableErrorMsg.CALLER_NOT_OWNER);
+
+    //------------reject (Pool cannot be zero address")
+    await carbonRetirementAggratorInstance
+      .connect(account1)
+      .addPool(zeroAddress, account3.address)
+      .should.be.rejectedWith(
+        CarbonRetirementAggregatorErrorMsg.CRT_POOL_ADDRESS_ZERO,
+      );
+
+    //------------reject (Bridge cannot be zero address")
+    await carbonRetirementAggratorInstance
+      .connect(account1)
+      .addPool(account2.address, zeroAddress)
+      .should.be.rejectedWith(
+        CarbonRetirementAggregatorErrorMsg.CRT_BRIDGE_ADDRESS_ZERO,
+      );
+
+    //-----------------work successfully
+
+    let tx1 = await carbonRetirementAggratorInstance
+      .connect(account1)
+      .addPool(account2.address, account3.address);
+
+    assert.equal(
+      await carbonRetirementAggratorInstance.poolTokenTobridgeHelper(
+        account2.address,
+      ),
+      account3.address,
+      "addPool is incorrect",
+    );
+
+    await expect(tx1)
+      .to.emit(carbonRetirementAggratorInstance, "PoolAdded")
+      .withArgs(account2.address, account3.address);
+
+    //------------reject (Pool already added)
+    await carbonRetirementAggratorInstance
+      .connect(account1)
+      .addPool(account2.address, account4.address)
+      .should.be.rejectedWith(
+        CarbonRetirementAggregatorErrorMsg.CRT_POOL_ALREADY_ADDED,
+      );
+  });
+});
 
 describe("Lock", function () {
   const zeroAddress = "0x0000000000000000000000000000000000000000";
@@ -14,10 +226,10 @@ describe("Lock", function () {
   const toucanFee = 2500; //25%
 
   const MANAGER_ROLE = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes("MANAGER_ROLE")
+    ethers.utils.toUtf8Bytes("MANAGER_ROLE"),
   );
   const VERIFIER_ROLE = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes("VERIFIER_ROLE")
+    ethers.utils.toUtf8Bytes("VERIFIER_ROLE"),
   );
 
   async function handleUniswap() {}
@@ -57,7 +269,7 @@ describe("Lock", function () {
     const Token = await ethers.getContractFactory("Weth");
     const Factory = await ethers.getContractFactory("Factory");
     const UniswapV2Router02New = await ethers.getContractFactory(
-      "UniswapV2Router02New"
+      "UniswapV2Router02New",
     );
 
     const TestUniswap = await ethers.getContractFactory("TestUniswap");
@@ -69,7 +281,7 @@ describe("Lock", function () {
 
     const dexRouterInstance = await UniswapV2Router02New.deploy(
       factoryAddress,
-      wethDexInstance.address
+      wethDexInstance.address,
     );
 
     const dexRouterAddress = dexRouterInstance.address;
@@ -79,118 +291,149 @@ describe("Lock", function () {
 
     await wethDexInstance.setMint(
       testUniswapAddress,
-      ethers.utils.parseUnits("125000", "ether")
+      ethers.utils.parseUnits("125000", "ether"),
     );
 
     await daiDexInstance.setMint(
       testUniswapAddress,
-      ethers.utils.parseUnits("500000000", "ether")
+      ethers.utils.parseUnits("500000000", "ether"),
     );
 
     await usdcDexInstance.setMint(
       testUniswapAddress,
-      ethers.utils.parseUnits("500000000", "ether")
+      ethers.utils.parseUnits("500000000", "ether"),
     );
 
     await testUniswapInstance.addLiquidity(
       daiDexInstance.address,
       wethDexInstance.address,
       ethers.utils.parseUnits("250000000", "ether"),
-      ethers.utils.parseUnits("125000", "ether")
+      ethers.utils.parseUnits("125000", "ether"),
     );
 
     await testUniswapInstance.addLiquidity(
       daiDexInstance.address,
       usdcDexInstance.address,
       ethers.utils.parseUnits("250000000", "ether"),
-      ethers.utils.parseUnits("250000000", "ether")
+      ethers.utils.parseUnits("250000000", "ether"),
     );
 
     //retirment deployment
 
     const BaseCarbonTonne = await ethers.getContractFactory("BaseCarbonTonne");
     const CarbonRetirementAggregator = await ethers.getContractFactory(
-      "CarbonRetirementAggregator"
+      "CarbonRetirementAggregator",
     );
 
     const CarbonRetirementsStorage = await ethers.getContractFactory(
-      "CarbonRetirementsStorage"
+      "CarbonRetirementsStorage",
     );
     const RetireToucanCarbon = await ethers.getContractFactory(
-      "RetireToucanCarbon"
+      "RetireToucanCarbon",
     );
     const ToucanContractRegistry = await ethers.getContractFactory(
-      "ToucanContractRegistry"
+      "ToucanContractRegistry",
     );
     const CarbonProjectVintages = await ethers.getContractFactory(
-      "CarbonProjectVintages"
+      "CarbonProjectVintages",
     );
     const CarbonProjects = await ethers.getContractFactory("CarbonProjects");
 
     const ToucanCarbonOffsetsFactory = await ethers.getContractFactory(
-      "ToucanCarbonOffsetsFactory"
+      "ToucanCarbonOffsetsFactory",
     );
     const ToucanCarbonOffsets = await ethers.getContractFactory(
-      "ToucanCarbonOffsets"
+      "ToucanCarbonOffsets",
     );
     const ToucanCarbonOffsetsBeacon = await ethers.getContractFactory(
-      "ToucanCarbonOffsetsBeacon"
+      "ToucanCarbonOffsetsBeacon",
     );
     const CarbonOffsetBatches = await ethers.getContractFactory(
-      "CarbonOffsetBatches"
+      "CarbonOffsetBatches",
     );
     const RetirementCertificates = await ethers.getContractFactory(
-      "RetirementCertificates"
+      "RetirementCertificates",
     );
 
     const baseCarbonTonneInstance = await upgrades.deployProxy(BaseCarbonTonne);
 
     const carbonRetirementAggratorInstance = await upgrades.deployProxy(
-      CarbonRetirementAggregator
+      CarbonRetirementAggregator,
+      {
+        kind: "uups",
+        initializer: "initialize",
+      },
     );
 
     const carbonRetirementsStorageInstance =
       await CarbonRetirementsStorage.deploy();
 
     const retireToucanCarbonInstance = await upgrades.deployProxy(
-      RetireToucanCarbon
+      RetireToucanCarbon,
+      {
+        kind: "uups",
+        initializer: "initialize",
+      },
     );
 
     const toucanContractRegistryInstance = await upgrades.deployProxy(
-      ToucanContractRegistry
+      ToucanContractRegistry,
+      {
+        kind: "uups",
+        initializer: "initialize",
+      },
     );
 
     const carbonProjectVintagesInstance = await upgrades.deployProxy(
-      CarbonProjectVintages
+      CarbonProjectVintages,
+      {
+        kind: "uups",
+        initializer: "initialize",
+      },
     );
 
-    const carbonProjectsInstance = await upgrades.deployProxy(CarbonProjects);
+    const carbonProjectsInstance = await upgrades.deployProxy(CarbonProjects, {
+      kind: "uups",
+      initializer: "initialize",
+    });
 
     const toucanCarbonOffsetsFactoryInstance = await upgrades.deployProxy(
       ToucanCarbonOffsetsFactory,
-      [toucanContractRegistryInstance.address]
+      [toucanContractRegistryInstance.address],
+      {
+        kind: "uups",
+        initializer: "initialize",
+      },
     );
 
     const toucanCarbonOffsetsInstance = await ToucanCarbonOffsets.deploy(
       "Toucan Protocol: TCO2",
       "TCO2",
       0,
-      zeroAddress
+      zeroAddress,
     );
 
     const toucanCarbonOffsetsBeaconInstance =
       await ToucanCarbonOffsetsBeacon.deploy(
-        toucanCarbonOffsetsInstance.address
+        toucanCarbonOffsetsInstance.address,
       );
 
     const carbonOffsetBatchesInstance = await upgrades.deployProxy(
       CarbonOffsetBatches,
-      [toucanContractRegistryInstance.address]
+      [toucanContractRegistryInstance.address],
+      {
+        kind: "uups",
+        initializer: "initialize",
+      },
     );
 
     const retirementCertificatesInstance = await upgrades.deployProxy(
       RetirementCertificates,
-      [toucanContractRegistryInstance.address, "baseURI"]
+      [toucanContractRegistryInstance.address, "baseURI"],
+      {
+        kind: "uups",
+        initializer: "initialize",
+      },
     );
 
     // /////////////////////////////////////////////////////////////////////////////////////////////
@@ -198,19 +441,19 @@ describe("Lock", function () {
     // ///////////////////////////////////////////////////////////////////////////////////////////////
     //---------------- config CarbonRetirementsStorage
     await carbonRetirementsStorageInstance.addHelperContract(
-      retireToucanCarbonInstance.address
+      retireToucanCarbonInstance.address,
     );
 
     //----------------- config carbonRetirementAggrator
     await carbonRetirementAggratorInstance.addPool(
       baseCarbonTonneInstance.address,
-      retireToucanCarbonInstance.address
+      retireToucanCarbonInstance.address,
     );
 
     //set usdc address
     await carbonRetirementAggratorInstance.setAddress(
       0,
-      usdcDexInstance.address
+      usdcDexInstance.address,
     );
     //set treasury address
     await carbonRetirementAggratorInstance.setAddress(1, treasury.address);
@@ -218,20 +461,20 @@ describe("Lock", function () {
     //set carbon Retirements storage address
     await carbonRetirementAggratorInstance.setAddress(
       2,
-      carbonRetirementsStorageInstance.address
+      carbonRetirementsStorageInstance.address,
     );
 
     //config retireToucanCarbon
     await retireToucanCarbonInstance.addPool(
       baseCarbonTonneInstance.address,
-      dexRouterAddress
+      dexRouterAddress,
     );
 
     await retireToucanCarbonInstance.setMasterAggregator(
-      carbonRetirementAggratorInstance.address
+      carbonRetirementAggratorInstance.address,
     );
     await retireToucanCarbonInstance.setToucanRegistry(
-      toucanContractRegistryInstance.address
+      toucanContractRegistryInstance.address,
     );
 
     await retireToucanCarbonInstance.setFeeAmount(feeAmount);
@@ -239,36 +482,36 @@ describe("Lock", function () {
     ////------------------------- config toucanContractRegistry
 
     await toucanContractRegistryInstance.setCarbonProjectsAddress(
-      carbonProjectsInstance.address
+      carbonProjectsInstance.address,
     );
 
     await toucanContractRegistryInstance.setCarbonProjectVintagesAddress(
-      carbonProjectVintagesInstance.address
+      carbonProjectVintagesInstance.address,
     );
 
     await toucanContractRegistryInstance.setToucanCarbonOffsetsFactoryAddress(
-      toucanCarbonOffsetsFactoryInstance.address
+      toucanCarbonOffsetsFactoryInstance.address,
     );
 
     await toucanContractRegistryInstance.setCarbonOffsetBatchesAddress(
-      carbonOffsetBatchesInstance.address
+      carbonOffsetBatchesInstance.address,
     );
     await toucanContractRegistryInstance.setCarbonOffsetBadgesAddress(
-      retirementCertificatesInstance.address
+      retirementCertificatesInstance.address,
     );
 
     ///// -------- config  carbonProjectVintages
     carbonProjectVintagesInstance.setToucanContractRegistry(
-      toucanContractRegistryInstance.address
+      toucanContractRegistryInstance.address,
     );
 
     ///-------------------- config baseCarbonTonne
     await baseCarbonTonneInstance.setSupplyCap(
-      ethers.utils.parseUnits("100000", "ether")
+      ethers.utils.parseUnits("100000", "ether"),
     );
 
     await baseCarbonTonneInstance.setToucanContractRegistry(
-      toucanContractRegistryInstance.address
+      toucanContractRegistryInstance.address,
     );
     await baseCarbonTonneInstance.setFeeRedeemPercentage(toucanFee);
 
@@ -276,7 +519,7 @@ describe("Lock", function () {
 
     await carbonOffsetBatchesInstance.grantRole(
       VERIFIER_ROLE,
-      verifier.address
+      verifier.address,
     );
 
     return {
@@ -355,7 +598,7 @@ describe("Lock", function () {
         "",
         "",
         "",
-        ""
+        "",
       );
 
       const now = parseInt(new Date().getTime() / 1000);
@@ -374,18 +617,18 @@ describe("Lock", function () {
         "coBenefits",
         "correspAdjustment",
         "additionalCertification",
-        "uri"
+        "uri",
       );
       //      deployFromVintage
 
       await toucanCarbonOffsetsFactoryInstance.setBeacon(
-        toucanCarbonOffsetsBeaconInstance.address
+        toucanCarbonOffsetsBeaconInstance.address,
       );
 
       await toucanCarbonOffsetsFactoryInstance.deployFromVintage(1);
 
       let deployedErc20 = await toucanCarbonOffsetsFactoryInstance.pvIdtoERC20(
-        1
+        1,
       );
 
       await carbonOffsetBatchesInstance.mintBatchWithData(
@@ -393,7 +636,7 @@ describe("Lock", function () {
         1,
         "12345",
         10000,
-        "uri"
+        "uri",
       );
 
       await carbonOffsetBatchesInstance.connect(verifier).confirmRetirement(1);
@@ -414,21 +657,21 @@ describe("Lock", function () {
 
       await usdcDexInstance.setMint(
         testUniswapInstance.address,
-        ethers.utils.parseUnits("20000", "ether")
+        ethers.utils.parseUnits("20000", "ether"),
       );
 
       await baseCarbonTonneInstance
         .connect(planter)
         .transfer(
           testUniswapInstance.address,
-          ethers.utils.parseUnits("10000", "ether")
+          ethers.utils.parseUnits("10000", "ether"),
         );
 
       await testUniswapInstance.addLiquidity(
         usdcDexInstance.address,
         baseCarbonTonneInstance.address,
         ethers.utils.parseUnits("20000", "ether"),
-        ethers.utils.parseUnits("10000", "ether")
+        ethers.utils.parseUnits("10000", "ether"),
       );
 
       await baseCarbonTonneInstance
@@ -445,11 +688,11 @@ describe("Lock", function () {
       const carbonList = [deployedErc20];
 
       await baseCarbonTonneInstance.setFeeRedeemBurnAddress(
-        feeRedeemBurnAccount.address
+        feeRedeemBurnAccount.address,
       );
 
       await baseCarbonTonneInstance.setFeeRedeemReceiver(
-        feeRedeemRecieverAccount.address
+        feeRedeemRecieverAccount.address,
       );
 
       await daiDexInstance.setMint(funder.address, mintAmount1);
@@ -469,7 +712,7 @@ describe("Lock", function () {
           retiringEntityString1,
           beneficiaryString1,
           retirementMessage1,
-          carbonList
+          carbonList,
         );
     });
   });
