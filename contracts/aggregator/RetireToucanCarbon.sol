@@ -146,7 +146,7 @@ contract RetireToucanCarbon is
             sourceAmount = _amount;
 
             IERC20Upgradeable(_sourceToken).safeTransferFrom(
-                _msgSender(),
+                msg.sender,
                 address(this),
                 sourceAmount
             );
@@ -253,7 +253,7 @@ contract RetireToucanCarbon is
             sourceAmount = _amount;
 
             IERC20Upgradeable(_sourceToken).safeTransferFrom(
-                _msgSender(),
+                msg.sender,
                 address(this),
                 sourceAmount
             );
@@ -282,7 +282,7 @@ contract RetireToucanCarbon is
         address _poolToken
     ) internal {
         if (_beneficiaryAddress == address(0)) {
-            _beneficiaryAddress = _msgSender();
+            _beneficiaryAddress = msg.sender;
         }
 
         address retirementStorage = ICarbonRetirementAggregator(
@@ -341,7 +341,7 @@ contract RetireToucanCarbon is
         address[] memory _carbonList
     ) internal {
         if (_beneficiaryAddress == address(0)) {
-            _beneficiaryAddress = _msgSender();
+            _beneficiaryAddress = msg.sender;
         }
 
         address retirementStorage = ICarbonRetirementAggregator(
@@ -428,7 +428,7 @@ contract RetireToucanCarbon is
         );
 
         IERC20Upgradeable(_sourceToken).safeTransferFrom(
-            _msgSender(),
+            msg.sender,
             address(this),
             sourceAmount
         );
