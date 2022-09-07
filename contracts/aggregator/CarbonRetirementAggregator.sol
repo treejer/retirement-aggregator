@@ -9,12 +9,24 @@ import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/IRetireBridgeCommon.sol";
 import "./interfaces/IRetireCarbon.sol";
 
-contract CarbonRetirementAggregator is OwnableUpgradeable {
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+contract CarbonRetirementAggregator is
+    Initializable,
+    OwnableUpgradeable,
+    UUPSUpgradeable
+{
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize() public initializer {
-        __Context_init_unchained();
-        __Ownable_init_unchained();
+        __UUPSUpgradeable_init();
+        __Ownable_init();
     }
 
     address public USDC;
@@ -55,7 +67,7 @@ contract CarbonRetirementAggregator is OwnableUpgradeable {
         );
 
         IERC20Upgradeable(_sourceToken).safeTransferFrom(
-            _msgSender(),
+            msg.sender,
             address(this),
             sourceAmount
         );
@@ -73,10 +85,10 @@ contract CarbonRetirementAggregator is OwnableUpgradeable {
             _retiringEntityString,
             _beneficiaryAddress != address(0)
                 ? _beneficiaryAddress
-                : _msgSender(),
+                : msg.sender,
             _beneficiaryString,
             _retirementMessage,
-            _msgSender()
+            msg.sender
         );
     }
 
@@ -124,7 +136,7 @@ contract CarbonRetirementAggregator is OwnableUpgradeable {
             _retiringEntityString,
             _beneficiaryAddress != address(0)
                 ? _beneficiaryAddress
-                : _msgSender(),
+                : msg.sender,
             _beneficiaryString,
             _retirementMessage,
             retiree
@@ -155,7 +167,7 @@ contract CarbonRetirementAggregator is OwnableUpgradeable {
         );
 
         IERC20Upgradeable(_sourceToken).safeTransferFrom(
-            _msgSender(),
+            msg.sender,
             address(this),
             sourceAmount
         );
@@ -173,10 +185,10 @@ contract CarbonRetirementAggregator is OwnableUpgradeable {
             _retiringEntityString,
             _beneficiaryAddress != address(0)
                 ? _beneficiaryAddress
-                : _msgSender(),
+                : msg.sender,
             _beneficiaryString,
             _retirementMessage,
-            _msgSender(),
+            msg.sender,
             _carbonList
         );
     }
@@ -226,7 +238,7 @@ contract CarbonRetirementAggregator is OwnableUpgradeable {
             _retiringEntityString,
             _beneficiaryAddress != address(0)
                 ? _beneficiaryAddress
-                : _msgSender(),
+                : msg.sender,
             _beneficiaryString,
             _retirementMessage,
             retiree,
@@ -377,4 +389,10 @@ contract CarbonRetirementAggregator is OwnableUpgradeable {
 
         return true;
     }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
 }

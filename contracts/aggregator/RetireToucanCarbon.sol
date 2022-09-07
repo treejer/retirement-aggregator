@@ -17,12 +17,25 @@ import "./interfaces/IToucanPool.sol";
 import "./interfaces/IToucanCarbonOffsets.sol";
 import "./interfaces/ICarbonRetirementAggregator.sol";
 
-contract RetireToucanCarbon is OwnableUpgradeable, IERC721ReceiverUpgradeable {
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+contract RetireToucanCarbon is
+    Initializable,
+    OwnableUpgradeable,
+    UUPSUpgradeable,
+    IERC721ReceiverUpgradeable
+{
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
     function initialize() public initializer {
-        __Context_init_unchained();
-        __Ownable_init_unchained();
+        __UUPSUpgradeable_init();
+        __Ownable_init();
     }
 
     uint256 public feeAmount;
@@ -656,4 +669,10 @@ contract RetireToucanCarbon is OwnableUpgradeable, IERC721ReceiverUpgradeable {
 
         emit MasterAggregatorUpdated(oldAddress, _newAddress);
     }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
 }
