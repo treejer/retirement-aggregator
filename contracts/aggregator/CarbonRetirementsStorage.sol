@@ -2,14 +2,30 @@
 
 pragma solidity ^0.8.6;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract CarbonRetirementsStorage is Ownable {
+contract CarbonRetirementsStorage is
+    Initializable,
+    OwnableUpgradeable,
+    UUPSUpgradeable
+{
     mapping(address => uint256) public retirements;
     mapping(address => bool) public isHelperContract;
 
     event HelperAdded(address helper);
     event HelperRemoved(address helper);
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize() public initializer {
+        __UUPSUpgradeable_init();
+        __Ownable_init();
+    }
 
     function carbonRetired(address _retiree, uint256 _amount) external {
         require(
@@ -31,4 +47,10 @@ contract CarbonRetirementsStorage is Ownable {
         isHelperContract[_helper] = false;
         emit HelperRemoved(_helper);
     }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
 }
