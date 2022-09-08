@@ -10,7 +10,14 @@ const CarbonRetirementAggregatorErrorMsg = {
   CRT_POOL_NOT_ADDED: "CRT:Pool not added",
 };
 
+const CarbonRetirementsStorageErrorMsg = {
+  CRS_HELPER_ALREADY_ADDED: "CRS:Helper already added",
+  CRS_HELPER_NOT_IN_LIST: "CRS:Helper is not on the list",
+  CRS_CALLER_NOT_HELPER: "CRS:Caller is not a defined helper contract",
+};
+
 module.exports = {
   OwnableErrorMsg,
   CarbonRetirementAggregatorErrorMsg,
+  CarbonRetirementsStorageErrorMsg,
 };

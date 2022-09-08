@@ -165,8 +165,13 @@ describe("CarbonRetirementAggregator", async () => {
       },
     );
 
-    const carbonRetirementsStorageInstance =
-      await CarbonRetirementsStorage.deploy();
+    const carbonRetirementsStorageInstance = await upgrades.deployProxy(
+      CarbonRetirementsStorage,
+      {
+        kind: "uups",
+        initializer: "initialize",
+      },
+    );
 
     const retireToucanCarbonInstance = await upgrades.deployProxy(
       RetireToucanCarbon,

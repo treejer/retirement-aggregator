@@ -27,23 +27,30 @@ contract CarbonRetirementsStorage is
         __Ownable_init();
     }
 
-    function carbonRetired(address _retiree, uint256 _amount) external {
+    modifier onlyHelperContract() {
         require(
             isHelperContract[msg.sender],
-            "Caller is not a defined helper contract"
+            "CRS:Caller is not a defined helper contract"
         );
+        _;
+    }
+
+    function carbonRetired(address _retiree, uint256 _amount)
+        external
+        onlyHelperContract
+    {
         retirements[_retiree] += _amount;
     }
 
     function addHelperContract(address _helper) external onlyOwner {
-        require(!isHelperContract[_helper], "Helper already added.");
+        require(!isHelperContract[_helper], "CRS:Helper already added");
         require(_helper != address(0));
         isHelperContract[_helper] = true;
         emit HelperAdded(_helper);
     }
 
     function removeHelperContract(address _helper) external onlyOwner {
-        require(isHelperContract[_helper], "Helper is not on the list");
+        require(isHelperContract[_helper], "CRS:Helper is not on the list");
         isHelperContract[_helper] = false;
         emit HelperRemoved(_helper);
     }
