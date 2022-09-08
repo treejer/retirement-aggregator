@@ -17,15 +17,6 @@ const {
 
 describe("CarbonRetirementsStorage", async () => {
   const zeroAddress = "0x0000000000000000000000000000000000000000";
-  const feeAmount = 100; //1%
-  const toucanFee = 2500; //25%
-
-  const MANAGER_ROLE = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes("MANAGER_ROLE"),
-  );
-  const VERIFIER_ROLE = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes("VERIFIER_ROLE"),
-  );
 
   async function handleDeploymentsAndSetAddress() {
     const [account1, account2, account3, account4, account5] =

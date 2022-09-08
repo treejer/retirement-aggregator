@@ -16,8 +16,16 @@ const CarbonRetirementsStorageErrorMsg = {
   CRS_CALLER_NOT_HELPER: "CRS:Caller is not a defined helper contract",
 };
 
+const RetireToucanCarbonErrorMsg = {
+  RTC_AMOUNT_INVALID: "RTC:amount must be less than 10000",
+  RTC_POOL_ADDRESS_INVALID: "RTC:Pool cannot be zero address",
+  RTC_ROUTER_ADDRESS_INVALID: "RTC:Router cannot be zero address",
+  RTC_POOL_NOT_EXISTS: "RTC:Pool not added",
+};
+
 module.exports = {
   OwnableErrorMsg,
   CarbonRetirementAggregatorErrorMsg,
   CarbonRetirementsStorageErrorMsg,
+  RetireToucanCarbonErrorMsg,
 };

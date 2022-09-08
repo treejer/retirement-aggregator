@@ -56,11 +56,7 @@ contract RetireToucanCarbon is
     );
     event PoolAdded(address indexed carbonPool, address indexed poolRouter);
     event PoolRemoved(address indexed carbonPool);
-    event PoolRouterChanged(
-        address indexed carbonPool,
-        address indexed oldRouter,
-        address indexed newRouter
-    );
+
     event FeeUpdated(uint256 oldFee, uint256 newFee);
     event MasterAggregatorUpdated(
         address indexed oldAddress,
@@ -613,21 +609,12 @@ contract RetireToucanCarbon is
     }
 
     function setFeeAmount(uint256 _amount) external onlyOwner {
+        require(_amount < 10001, "RTC:amount must be less than 10000");
+
         uint256 oldFee = feeAmount;
         feeAmount = _amount;
 
         emit FeeUpdated(oldFee, feeAmount);
-    }
-
-    function setPoolRouter(address _poolToken, address _router)
-        external
-        onlyOwner
-    {
-        require(poolRouter[_poolToken] != address(0), "Pool not added");
-
-        address oldRouter = poolRouter[_poolToken];
-        poolRouter[_poolToken] = _router;
-        emit PoolRouterChanged(_poolToken, oldRouter, poolRouter[_poolToken]);
     }
 
     function setToucanRegistry(address _registry) external onlyOwner {
@@ -639,9 +626,9 @@ contract RetireToucanCarbon is
     }
 
     function addPool(address _poolToken, address _router) external onlyOwner {
-        require(_poolToken != address(0), "Pool cannot be zero address");
+        require(_poolToken != address(0), "RTC:Pool cannot be zero address");
 
-        require(poolRouter[_poolToken] == address(0), "Pool already added");
+        require(_router != address(0), "RTC:Router cannot be zero address");
 
         poolRouter[_poolToken] = _router;
 
@@ -649,9 +636,9 @@ contract RetireToucanCarbon is
     }
 
     function removePool(address _poolToken) external onlyOwner {
-        require(poolRouter[_poolToken] != address(0), "Pool not added");
+        require(poolRouter[_poolToken] != address(0), "RTC:Pool not added");
 
-        poolRouter[_poolToken] == address(0);
+        poolRouter[_poolToken] = address(0);
 
         emit PoolRemoved(_poolToken);
     }
