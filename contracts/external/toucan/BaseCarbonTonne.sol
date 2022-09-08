@@ -11,6 +11,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import "./interfaces/ICarbonOffsetBatches.sol";
 import "./interfaces/IToucanCarbonOffsets_2.sol";
@@ -26,7 +27,8 @@ contract BaseCarbonTonne is
     ERC20Upgradeable,
     OwnableUpgradeable,
     AccessControlUpgradeable,
-    BaseCarbonTonneStorage
+    BaseCarbonTonneStorage,
+    UUPSUpgradeable
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -67,9 +69,16 @@ contract BaseCarbonTonne is
     event AddFeeExemptedTCO2(address tco2);
     event RemoveFeeExemptedTCO2(address tco2);
 
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        virtual
+        override
+        onlyOwner
+    {}
+
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
-        // _disableInitializers();
+        _disableInitializers();
     }
 
     // ----------------------------------------

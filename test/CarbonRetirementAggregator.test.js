@@ -15,212 +15,7 @@ const {
   CarbonRetirementAggregatorErrorMsg,
 } = require("./enumes");
 
-describe("without deploy toucan contrct", function () {
-  const zeroAddress = "0x0000000000000000000000000000000000000000";
-
-  async function handleDeploymentsAndSetAddress() {
-    const [account1, account2, account3, account4, account5] =
-      await ethers.getSigners();
-
-    const CarbonRetirementAggregator = await ethers.getContractFactory(
-      "CarbonRetirementAggregator",
-      account1,
-    );
-
-    const carbonRetirementAggratorInstance = await upgrades.deployProxy(
-      CarbonRetirementAggregator,
-      {
-        kind: "uups",
-        initializer: "initialize",
-      },
-    );
-
-    return {
-      account1,
-      account2,
-      account3,
-      account4,
-      account5,
-      carbonRetirementAggratorInstance,
-    };
-  }
-
-  it.only("write test for setAddress", async () => {
-    let {
-      account1,
-      account2,
-      account3,
-      account4,
-      account5,
-      carbonRetirementAggratorInstance,
-    } = await loadFixture(handleDeploymentsAndSetAddress);
-
-    //------rejected(only owner can call setAddress)
-
-    await carbonRetirementAggratorInstance
-      .connect(account2)
-      .setAddress(0, account2.address)
-      .should.be.rejectedWith(OwnableErrorMsg.CALLER_NOT_OWNER);
-
-    //------rejected(_selection must be less than 2)
-
-    await carbonRetirementAggratorInstance
-      .connect(account1)
-      .setAddress(3, account2.address)
-      .should.be.rejectedWith(
-        CarbonRetirementAggregatorErrorMsg.CRT_SELECTION_LIMIT,
-      );
-
-    //------change USDC
-
-    assert.equal(
-      await carbonRetirementAggratorInstance.USDC(),
-      zeroAddress,
-      "USDC address is incorrect",
-    );
-
-    let tx1 = await carbonRetirementAggratorInstance
-      .connect(account1)
-      .setAddress(0, account2.address);
-
-    await expect(tx1)
-      .to.emit(carbonRetirementAggratorInstance, "AddressUpdated")
-      .withArgs(0, zeroAddress, account2.address);
-
-    assert.equal(
-      await carbonRetirementAggratorInstance.USDC(),
-      account2.address,
-      "USDC address is incorrect",
-    );
-
-    assert.equal(
-      await carbonRetirementAggratorInstance.treasury(),
-      zeroAddress,
-      "treasury address is incorrect",
-    );
-
-    //------change treasury
-
-    assert.equal(
-      await carbonRetirementAggratorInstance.treasury(),
-      zeroAddress,
-      "treasury address is incorrect",
-    );
-
-    let tx2 = await carbonRetirementAggratorInstance
-      .connect(account1)
-      .setAddress(1, account3.address);
-
-    await expect(tx2)
-      .to.emit(carbonRetirementAggratorInstance, "AddressUpdated")
-      .withArgs(1, zeroAddress, account3.address);
-
-    assert.equal(
-      await carbonRetirementAggratorInstance.treasury(),
-      account3.address,
-      "treasury address is incorrect",
-    );
-
-    assert.equal(
-      await carbonRetirementAggratorInstance.carbonRetirementStorage(),
-      zeroAddress,
-      "carbonRetirementStorage address is incorrect",
-    );
-
-    //------change carbonRetirementStorage
-
-    assert.equal(
-      await carbonRetirementAggratorInstance.carbonRetirementStorage(),
-      zeroAddress,
-      "carbonRetirementStorage address is incorrect",
-    );
-
-    let tx3 = await carbonRetirementAggratorInstance
-      .connect(account1)
-      .setAddress(2, account4.address);
-
-    await expect(tx3)
-      .to.emit(carbonRetirementAggratorInstance, "AddressUpdated")
-      .withArgs(2, zeroAddress, account4.address);
-
-    assert.equal(
-      await carbonRetirementAggratorInstance.carbonRetirementStorage(),
-      account4.address,
-      "carbonRetirementStorage address is incorrect",
-    );
-
-    //-------change carbonRetirementStorage 2
-
-    let tx4 = await carbonRetirementAggratorInstance
-      .connect(account1)
-      .setAddress(2, account5.address);
-
-    await expect(tx4)
-      .to.emit(carbonRetirementAggratorInstance, "AddressUpdated")
-      .withArgs(2, account4.address, account5.address);
-  });
-
-  it.only("test addPool", async () => {
-    let {
-      account1,
-      account2,
-      account3,
-      account4,
-      account5,
-      carbonRetirementAggratorInstance,
-    } = await loadFixture(handleDeploymentsAndSetAddress);
-
-    //------------reject (only owner )
-    await carbonRetirementAggratorInstance
-      .connect(account2)
-      .addPool(account2.address, account3.address)
-      .should.be.rejectedWith(OwnableErrorMsg.CALLER_NOT_OWNER);
-
-    //------------reject (Pool cannot be zero address")
-    await carbonRetirementAggratorInstance
-      .connect(account1)
-      .addPool(zeroAddress, account3.address)
-      .should.be.rejectedWith(
-        CarbonRetirementAggregatorErrorMsg.CRT_POOL_ADDRESS_ZERO,
-      );
-
-    //------------reject (Bridge cannot be zero address")
-    await carbonRetirementAggratorInstance
-      .connect(account1)
-      .addPool(account2.address, zeroAddress)
-      .should.be.rejectedWith(
-        CarbonRetirementAggregatorErrorMsg.CRT_BRIDGE_ADDRESS_ZERO,
-      );
-
-    //-----------------work successfully
-
-    let tx1 = await carbonRetirementAggratorInstance
-      .connect(account1)
-      .addPool(account2.address, account3.address);
-
-    assert.equal(
-      await carbonRetirementAggratorInstance.poolTokenTobridgeHelper(
-        account2.address,
-      ),
-      account3.address,
-      "addPool is incorrect",
-    );
-
-    await expect(tx1)
-      .to.emit(carbonRetirementAggratorInstance, "PoolAdded")
-      .withArgs(account2.address, account3.address);
-
-    //------------reject (Pool already added)
-    await carbonRetirementAggratorInstance
-      .connect(account1)
-      .addPool(account2.address, account4.address)
-      .should.be.rejectedWith(
-        CarbonRetirementAggregatorErrorMsg.CRT_POOL_ALREADY_ADDED,
-      );
-  });
-});
-
-describe("Lock", function () {
+describe("CarbonRetirementAggregator", async () => {
   const zeroAddress = "0x0000000000000000000000000000000000000000";
   const feeAmount = 100; //1%
   const toucanFee = 2500; //25%
@@ -232,7 +27,6 @@ describe("Lock", function () {
     ethers.utils.toUtf8Bytes("VERIFIER_ROLE"),
   );
 
-  async function handleUniswap() {}
   async function handleDeploymentsAndSetAddress() {
     const [
       account1,
@@ -355,7 +149,13 @@ describe("Lock", function () {
       "RetirementCertificates",
     );
 
-    const baseCarbonTonneInstance = await upgrades.deployProxy(BaseCarbonTonne);
+    const baseCarbonTonneInstance = await upgrades.deployProxy(
+      BaseCarbonTonne,
+      {
+        kind: "uups",
+        initializer: "initialize",
+      },
+    );
 
     const carbonRetirementAggratorInstance = await upgrades.deployProxy(
       CarbonRetirementAggregator,
@@ -539,17 +339,20 @@ describe("Lock", function () {
       toucanCarbonOffsetsBeaconInstance,
       carbonOffsetBatchesInstance,
       retirementCertificatesInstance,
-      account3,
-      account4,
       deployerAccount,
       verifier,
       manager,
       feeRedeemRecieverAccount,
       feeRedeemBurnAccount,
+      account1,
+      account2,
+      account3,
+      account4,
+      account5,
     };
   }
 
-  describe("Deployment", function () {
+  describe("with deploy toucan contrct", function () {
     it("Should set the right unlockTime", async function () {
       let {
         usdcDexInstance,
@@ -714,6 +517,277 @@ describe("Lock", function () {
           retirementMessage1,
           carbonList,
         );
+    });
+  });
+
+  describe("without deploy toucan contrct", function () {
+    const zeroAddress = "0x0000000000000000000000000000000000000000";
+
+    it("write test for setAddress", async () => {
+      let {
+        account1,
+        account2,
+        account3,
+        account4,
+        account5,
+        carbonRetirementAggratorInstance,
+      } = await loadFixture(handleDeploymentsAndSetAddress);
+
+      //------rejected(only owner can call setAddress)
+
+      await carbonRetirementAggratorInstance
+        .connect(account2)
+        .setAddress(0, account2.address)
+        .should.be.rejectedWith(OwnableErrorMsg.CALLER_NOT_OWNER);
+
+      //------rejected(_selection must be less than 2)
+
+      await carbonRetirementAggratorInstance
+        .connect(account1)
+        .setAddress(3, account2.address)
+        .should.be.rejectedWith(
+          CarbonRetirementAggregatorErrorMsg.CRT_SELECTION_LIMIT,
+        );
+
+      let USDCBeforeAddress = await carbonRetirementAggratorInstance.USDC();
+      let treasuryBeforeAddress =
+        await carbonRetirementAggratorInstance.treasury();
+      let carbonRetirementStorageBeforeAddress =
+        await carbonRetirementAggratorInstance.carbonRetirementStorage();
+
+      //------change USDC
+
+      assert.equal(
+        (await carbonRetirementAggratorInstance.USDC()) != account2.address,
+        true,
+        "USDC address is incorrect",
+      );
+
+      let tx1 = await carbonRetirementAggratorInstance
+        .connect(account1)
+        .setAddress(0, account2.address);
+
+      await expect(tx1)
+        .to.emit(carbonRetirementAggratorInstance, "AddressUpdated")
+        .withArgs(0, USDCBeforeAddress, account2.address);
+
+      assert.equal(
+        await carbonRetirementAggratorInstance.USDC(),
+        account2.address,
+        "USDC address is incorrect",
+      );
+
+      assert.equal(
+        await carbonRetirementAggratorInstance.treasury(),
+        treasuryBeforeAddress,
+        "treasury address is incorrect",
+      );
+
+      //------change treasury
+
+      assert.equal(
+        (await carbonRetirementAggratorInstance.treasury()) != account3.address,
+        true,
+        "treasury address is incorrect",
+      );
+
+      let tx2 = await carbonRetirementAggratorInstance
+        .connect(account1)
+        .setAddress(1, account3.address);
+
+      await expect(tx2)
+        .to.emit(carbonRetirementAggratorInstance, "AddressUpdated")
+        .withArgs(1, treasuryBeforeAddress, account3.address);
+
+      assert.equal(
+        await carbonRetirementAggratorInstance.treasury(),
+        account3.address,
+        "treasury address is incorrect",
+      );
+
+      assert.equal(
+        await carbonRetirementAggratorInstance.carbonRetirementStorage(),
+        carbonRetirementStorageBeforeAddress,
+        "carbonRetirementStorage address is incorrect",
+      );
+
+      //------change carbonRetirementStorage
+
+      assert.equal(
+        (await carbonRetirementAggratorInstance.carbonRetirementStorage()) !=
+          account4.address,
+        true,
+        "carbonRetirementStorage address is incorrect",
+      );
+
+      let tx3 = await carbonRetirementAggratorInstance
+        .connect(account1)
+        .setAddress(2, account4.address);
+
+      await expect(tx3)
+        .to.emit(carbonRetirementAggratorInstance, "AddressUpdated")
+        .withArgs(2, carbonRetirementStorageBeforeAddress, account4.address);
+
+      assert.equal(
+        await carbonRetirementAggratorInstance.carbonRetirementStorage(),
+        account4.address,
+        "carbonRetirementStorage address is incorrect",
+      );
+
+      //-------change carbonRetirementStorage 2
+
+      let tx4 = await carbonRetirementAggratorInstance
+        .connect(account1)
+        .setAddress(2, account5.address);
+
+      await expect(tx4)
+        .to.emit(carbonRetirementAggratorInstance, "AddressUpdated")
+        .withArgs(2, account4.address, account5.address);
+    });
+
+    it("test addPool and removePool", async () => {
+      let {
+        account1,
+        account2,
+        account3,
+        account4,
+        carbonRetirementAggratorInstance,
+      } = await loadFixture(handleDeploymentsAndSetAddress);
+
+      //------------reject (only owner )
+      await carbonRetirementAggratorInstance
+        .connect(account2)
+        .addPool(account2.address, account3.address)
+        .should.be.rejectedWith(OwnableErrorMsg.CALLER_NOT_OWNER);
+
+      //------------reject (Pool cannot be zero address")
+      await carbonRetirementAggratorInstance
+        .connect(account1)
+        .addPool(zeroAddress, account3.address)
+        .should.be.rejectedWith(
+          CarbonRetirementAggregatorErrorMsg.CRT_POOL_ADDRESS_ZERO,
+        );
+
+      //------------reject (Bridge cannot be zero address")
+      await carbonRetirementAggratorInstance
+        .connect(account1)
+        .addPool(account2.address, zeroAddress)
+        .should.be.rejectedWith(
+          CarbonRetirementAggregatorErrorMsg.CRT_BRIDGE_ADDRESS_ZERO,
+        );
+
+      //-----------------work successfully
+
+      let tx1 = await carbonRetirementAggratorInstance
+        .connect(account1)
+        .addPool(account2.address, account3.address);
+
+      assert.equal(
+        await carbonRetirementAggratorInstance.poolTokenTobridgeHelper(
+          account2.address,
+        ),
+        account3.address,
+        "addPool is incorrect",
+      );
+
+      await expect(tx1)
+        .to.emit(carbonRetirementAggratorInstance, "PoolAdded")
+        .withArgs(account2.address, account3.address);
+
+      //------------reject (Pool already added)
+      await carbonRetirementAggratorInstance
+        .connect(account1)
+        .addPool(account2.address, account4.address)
+        .should.be.rejectedWith(
+          CarbonRetirementAggregatorErrorMsg.CRT_POOL_ALREADY_ADDED,
+        );
+
+      ///------------------------- test remove pool
+
+      //------------reject (only owner )
+
+      await carbonRetirementAggratorInstance
+        .connect(account2)
+        .removePool(account2.address)
+        .should.be.rejectedWith(OwnableErrorMsg.CALLER_NOT_OWNER);
+
+      //------------reject (pool not added)
+
+      await carbonRetirementAggratorInstance
+        .connect(account1)
+        .removePool(account3.address)
+        .should.be.rejectedWith(
+          CarbonRetirementAggregatorErrorMsg.CRT_POOL_NOT_ADDED,
+        );
+
+      //-----------------work successfully
+
+      let tx2 = await carbonRetirementAggratorInstance
+        .connect(account1)
+        .removePool(account2.address);
+
+      assert.equal(
+        await carbonRetirementAggratorInstance.poolTokenTobridgeHelper(
+          account2.address,
+        ),
+        zeroAddress,
+        "removePool is incorrect",
+      );
+
+      await expect(tx2)
+        .to.emit(carbonRetirementAggratorInstance, "PoolRemoved")
+        .withArgs(account2.address);
+    });
+
+    it("write test for feeWithdraw", async () => {
+      let {
+        account1,
+        account2,
+        carbonRetirementAggratorInstance,
+        daiDexInstance,
+      } = await loadFixture(handleDeploymentsAndSetAddress);
+
+      await daiDexInstance.setMint(
+        carbonRetirementAggratorInstance.address,
+        ethers.utils.parseUnits("1000", "ether"),
+      );
+
+      //------------------------start test feeWithdraw
+
+      //------------reject (only owner )
+      await carbonRetirementAggratorInstance
+        .connect(account2)
+        .feeWithdraw(daiDexInstance.address, account2.address)
+        .should.be.rejectedWith(OwnableErrorMsg.CALLER_NOT_OWNER);
+
+      //---------------reject
+      await carbonRetirementAggratorInstance
+        .connect(account1)
+        .feeWithdraw(daiDexInstance.address, zeroAddress).should.be.rejected;
+
+      //---------------reject
+      await carbonRetirementAggratorInstance
+        .connect(account1)
+        .feeWithdraw(zeroAddress, account2.address).should.be.rejected;
+
+      //------------work successfully
+      await carbonRetirementAggratorInstance
+        .connect(account1)
+        .feeWithdraw(daiDexInstance.address, account2.address);
+
+      assert.equal(
+        Number(await daiDexInstance.balanceOf(account2.address)),
+        Number(ethers.utils.parseUnits("1000", "ether")),
+        "withdraw is incorrect",
+      );
+
+      assert.equal(
+        await daiDexInstance.balanceOf(
+          carbonRetirementAggratorInstance.address,
+        ),
+        0,
+        "withdraw is incorrect",
+      );
     });
   });
 });

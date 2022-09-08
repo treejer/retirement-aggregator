@@ -42,7 +42,6 @@ contract CarbonRetirementAggregator is
     );
     event PoolAdded(address poolToken, address bridge);
     event PoolRemoved(address poolToken);
-    event BridgeHelperUpdated(uint256 bridgeID, address helper);
 
     function retireCarbon(
         address _sourceToken,
@@ -371,7 +370,7 @@ contract CarbonRetirementAggregator is
     function removePool(address _poolToken) external onlyOwner {
         require(
             poolTokenTobridgeHelper[_poolToken] != address(0),
-            "Pool not added"
+            "CRT:Pool not added"
         );
 
         poolTokenTobridgeHelper[_poolToken] = address(0);
