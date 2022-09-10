@@ -473,15 +473,10 @@ contract RetireToucanCarbon is
         returns (uint256)
     {
         uint256 poolFeeAmount;
-        bool feeExempt;
 
-        try
-            IToucanPool(_poolToken).redeemFeeExemptedAddresses(address(this))
-        returns (bool result) {
-            feeExempt = result;
-        } catch {
-            feeExempt = false;
-        }
+        bool feeExempt = IToucanPool(_poolToken).redeemFeeExemptedAddresses(
+            address(this)
+        );
 
         if (feeExempt) {
             poolFeeAmount = 0;
