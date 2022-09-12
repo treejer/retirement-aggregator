@@ -474,8 +474,6 @@ describe("CarbonRetirementAggregator", async () => {
         amount1,
         true
       );
-
-      console.log("amount", amount);
     });
 
     it("Should set the right unlockTime", async () => {
@@ -558,8 +556,6 @@ describe("CarbonRetirementAggregator", async () => {
           carbonList
         );
     });
-
-    it("test getSourceAmount", async () => {});
   });
 
   describe("without deploy toucan contrct", function () {
