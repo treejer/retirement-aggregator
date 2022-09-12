@@ -771,5 +771,26 @@ describe("CarbonRetirementAggregator", async () => {
         "withdraw is incorrect",
       );
     });
+
+    ///----------------------- test view function
+
+    it("write test for getCarbonRetirmentAmount (amoutInCarbon == true) ", async () => {
+      let {
+        account1,
+        account2,
+        carbonRetirementAggratorInstance,
+        baseCarbonTonneInstance,
+      } = await loadFixture(handleDeploymentsAndSetAddress);
+
+      //-----> test _specificRetire == false and poolToken != sourceToken
+
+      await carbonRetirementAggratorInstance
+        .connect(1)
+        .getCarbonRetirmentAmount(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("10", "ether"),
+        );
+    });
   });
 });
