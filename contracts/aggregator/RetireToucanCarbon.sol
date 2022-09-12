@@ -452,8 +452,8 @@ contract RetireToucanCarbon is
             uint256[] memory amountIn = IUniswapV2Router02(
                 poolRouter[_poolToken]
             ).getAmountsIn(totalAmount, path);
-            // Account for .1% default AMM slippage.
-            totalAmount = (amountIn[0] * 1001) / 1000;
+
+            totalAmount = amountIn[0];
         }
 
         return (totalAmount, fee);

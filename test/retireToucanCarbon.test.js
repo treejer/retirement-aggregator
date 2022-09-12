@@ -909,8 +909,8 @@ describe("RetireToucanCarbon", async () => {
     );
 
     assert.equal(
-      result6[0],
-      Math.divide(Math.Big(expectedSwapTokenAmount[0]).mul(1001), 1000),
+      Number(result6[0]),
+      Number(expectedSwapTokenAmount[0]),
       "result6 is not correct",
     );
 
@@ -939,8 +939,8 @@ describe("RetireToucanCarbon", async () => {
     );
 
     assert.equal(
-      result8[0],
-      Math.divide(Math.Big(expectedSwapTokenAmount3[0]).mul(1001), 1000),
+      Number(result8[0]),
+      Number(expectedSwapTokenAmount3[0]),
       "result8 is not correct",
     );
 
@@ -971,8 +971,8 @@ describe("RetireToucanCarbon", async () => {
     );
 
     assert.equal(
-      result7[0],
-      Math.divide(Math.Big(expectedSwapTokenAmount2[0]).mul(1001), 1000),
+      Number(result7[0]),
+      Number(expectedSwapTokenAmount2[0]),
       "result7 is not correct",
     );
 
@@ -1001,8 +1001,8 @@ describe("RetireToucanCarbon", async () => {
     );
 
     assert.equal(
-      result9[0],
-      Math.divide(Math.Big(expectedSwapTokenAmount4[0]).mul(1001), 1000),
+      Number(result9[0]),
+      Number(expectedSwapTokenAmount4[0]),
       "result9 is not correct",
     );
 
@@ -1033,8 +1033,8 @@ describe("RetireToucanCarbon", async () => {
     );
 
     assert.equal(
-      result10[0],
-      Math.divide(Math.Big(expectedSwapTokenAmount5[0]).mul(1001), 1000),
+      Number(result10[0]),
+      Number(expectedSwapTokenAmount5[0]),
       "result10 is not correct",
     );
 
