@@ -86,13 +86,11 @@ contract CarbonRetirementAggregator is
                 ? _beneficiaryAddress
                 : msg.sender,
             _beneficiaryString,
-            _retirementMessage,
-            msg.sender
+            _retirementMessage
         );
     }
 
     function retireCarbonFrom(
-        address _initiator,
         address _sourceToken,
         address _poolToken,
         uint256 _amount,
@@ -120,8 +118,6 @@ contract CarbonRetirementAggregator is
             "Source tokens not transferred."
         );
 
-        address retiree = _initiator;
-
         IERC20Upgradeable(_sourceToken).safeIncreaseAllowance(
             poolTokenTobridgeHelper[_poolToken],
             sourceAmount
@@ -137,8 +133,7 @@ contract CarbonRetirementAggregator is
                 ? _beneficiaryAddress
                 : msg.sender,
             _beneficiaryString,
-            _retirementMessage,
-            retiree
+            _retirementMessage
         );
     }
 
@@ -187,13 +182,11 @@ contract CarbonRetirementAggregator is
                 : msg.sender,
             _beneficiaryString,
             _retirementMessage,
-            msg.sender,
             _carbonList
         );
     }
 
     function retireCarbonSpecificFrom(
-        address _initiator,
         address _sourceToken,
         address _poolToken,
         uint256 _amount,
@@ -208,8 +201,6 @@ contract CarbonRetirementAggregator is
             poolTokenTobridgeHelper[_poolToken] != address(0),
             "Pool Token Not Accepted."
         );
-
-        address retiree = _initiator;
 
         uint256 sourceAmount = getSourceAmountSpecific(
             _sourceToken,
@@ -240,7 +231,6 @@ contract CarbonRetirementAggregator is
                 : msg.sender,
             _beneficiaryString,
             _retirementMessage,
-            retiree,
             _carbonList
         );
     }

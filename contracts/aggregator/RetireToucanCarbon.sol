@@ -75,8 +75,7 @@ contract RetireToucanCarbon is
         string memory _retiringEntityString,
         address _beneficiaryAddress,
         string memory _beneficiaryString,
-        string memory _retirementMessage,
-        address _retiree
+        string memory _retirementMessage
     ) public {
         require(
             poolRouter[_poolToken] != address(0),
@@ -88,8 +87,7 @@ contract RetireToucanCarbon is
             _sourceToken,
             _poolToken,
             _amount,
-            _amountInCarbon,
-            _retiree
+            _amountInCarbon
         );
 
         _retireCarbon(
@@ -113,8 +111,7 @@ contract RetireToucanCarbon is
         address _sourceToken,
         address _poolToken,
         uint256 _amount,
-        bool _amountInCarbon,
-        address _retiree
+        bool _amountInCarbon
     ) internal returns (uint256, uint256) {
         uint256 fee;
         uint256 sourceAmount;
@@ -134,8 +131,7 @@ contract RetireToucanCarbon is
                     _sourceToken,
                     _poolToken,
                     totalCarbon,
-                    sourceAmount,
-                    _retiree
+                    sourceAmount
                 );
             }
         } else {
@@ -171,7 +167,6 @@ contract RetireToucanCarbon is
         address _beneficiaryAddress,
         string memory _beneficiaryString,
         string memory _retirementMessage,
-        address _retiree,
         address[] memory _carbonList
     ) public {
         require(
@@ -184,8 +179,7 @@ contract RetireToucanCarbon is
             _sourceToken,
             _poolToken,
             _amount,
-            _amountInCarbon,
-            _retiree
+            _amountInCarbon
         );
 
         _retireCarbonSpecific(
@@ -210,8 +204,7 @@ contract RetireToucanCarbon is
         address _sourceToken,
         address _poolToken,
         uint256 _amount,
-        bool _amountInCarbon,
-        address _retiree
+        bool _amountInCarbon
     ) internal returns (uint256, uint256) {
         uint256 fee;
         uint256 sourceAmount;
@@ -239,8 +232,7 @@ contract RetireToucanCarbon is
                     _sourceToken,
                     _poolToken,
                     totalCarbon,
-                    sourceAmount,
-                    _retiree
+                    sourceAmount
                 );
             } else {
                 _amount = sourceAmount - fee;
@@ -521,8 +513,7 @@ contract RetireToucanCarbon is
         address _sourceToken,
         address _poolToken,
         uint256 _carbonAmount,
-        uint256 _amountIn,
-        address _retiree
+        uint256 _amountIn
     ) internal {
         address[] memory path = getSwapPath(_sourceToken, _poolToken);
 

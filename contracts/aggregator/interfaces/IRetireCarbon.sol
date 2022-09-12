@@ -11,8 +11,7 @@ interface IRetireCarbon {
         string memory _retireEntityString,
         address _beneficiaryAddress,
         string memory _beneficiaryString,
-        string memory _retirementMessage,
-        address _retiree
+        string memory _retirementMessage
     ) external;
 
     function retireSpecific(
@@ -24,7 +23,6 @@ interface IRetireCarbon {
         address _beneficiaryAddress,
         string memory _beneficiaryString,
         string memory _retirementMessage,
-        address _retiree,
         address[] memory _carbonList
     ) external;
 
