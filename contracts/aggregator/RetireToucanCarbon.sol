@@ -539,8 +539,6 @@ contract RetireToucanCarbon is
                 address(this),
                 block.timestamp
             );
-
-        _returnTradeDust(amounts, _sourceToken, _amountIn, _retiree);
     }
 
     function _swapExactForCarbon(
@@ -569,16 +567,6 @@ contract RetireToucanCarbon is
         uint256 fee = (totalCarbon * feeAmount) / 10000;
 
         return (totalCarbon - fee, fee);
-    }
-
-    function _returnTradeDust(
-        uint256[] memory _amounts,
-        address _sourceToken,
-        uint256 _amountIn,
-        address _retiree
-    ) internal {
-        uint256 tradeDust = _amountIn - _amounts[0];
-        IERC20Upgradeable(_sourceToken).safeTransfer(_retiree, tradeDust);
     }
 
     function onERC721Received(

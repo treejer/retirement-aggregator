@@ -28,29 +28,6 @@ describe("CarbonRetirementAggregator", async () => {
   );
 
   async function handleDeploymentsAndSetAddress() {
-    const [
-      account1,
-      account2,
-      account3,
-      account4,
-      account5,
-      account6,
-      account7,
-      account8,
-      account9,
-      account10,
-      account11,
-      account12,
-      account13,
-      account14,
-      account15,
-      account16,
-      account17,
-      account18,
-      account19,
-      account20,
-    ] = await ethers.getSigners();
-
     const deployerAccount = account1;
     const treasury = account20;
     const manager = account19;
