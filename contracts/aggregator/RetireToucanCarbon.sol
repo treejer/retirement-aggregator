@@ -451,12 +451,28 @@ contract RetireToucanCarbon is
         return (totalAmount, fee);
     }
 
-    function getSpecificCarbonFee(address _poolToken, uint256 _poolAmount)
+    function getCarbonRetirmentAmount(address _poolToken, uint256 _poolAmount)
         external
         view
         returns (uint256)
     {
-        return _getSpecificCarbonFee(_poolToken, _poolAmount);
+        uint256 poolFeeAmount;
+
+        bool feeExempt = IToucanPool(_poolToken).redeemFeeExemptedAddresses(
+            address(this)
+        );
+
+        if (feeExempt) {
+            poolFeeAmount = 0;
+        } else {
+            uint256 feeRedeemBp = IToucanPool(_poolToken)
+                .feeRedeemPercentageInBase();
+            uint256 feeRedeemDivider = IToucanPool(_poolToken)
+                .feeRedeemDivider();
+            poolFeeAmount = (_poolAmount * feeRedeemBp) / feeRedeemDivider;
+        }
+
+        return poolFeeAmount;
     }
 
     function _getSpecificCarbonFee(address _poolToken, uint256 _poolAmount)

@@ -15,16 +15,18 @@ const {
   CarbonRetirementAggregatorErrorMsg,
 } = require("./enumes");
 
+const Math = require("./math");
+
 describe("CarbonRetirementAggregator", async () => {
   const zeroAddress = "0x0000000000000000000000000000000000000000";
   const feeAmount = 100; //1%
   const toucanFee = 2500; //25%
 
   const MANAGER_ROLE = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes("MANAGER_ROLE")
+    ethers.utils.toUtf8Bytes("MANAGER_ROLE"),
   );
   const VERIFIER_ROLE = ethers.utils.keccak256(
-    ethers.utils.toUtf8Bytes("VERIFIER_ROLE")
+    ethers.utils.toUtf8Bytes("VERIFIER_ROLE"),
   );
 
   async function handleDeploymentsAndSetAddress() {
@@ -63,7 +65,7 @@ describe("CarbonRetirementAggregator", async () => {
     const Token = await ethers.getContractFactory("Weth");
     const Factory = await ethers.getContractFactory("Factory");
     const UniswapV2Router02New = await ethers.getContractFactory(
-      "UniswapV2Router02New"
+      "UniswapV2Router02New",
     );
 
     const TestUniswap = await ethers.getContractFactory("TestUniswap");
@@ -75,7 +77,7 @@ describe("CarbonRetirementAggregator", async () => {
 
     const dexRouterInstance = await UniswapV2Router02New.deploy(
       factoryAddress,
-      wethDexInstance.address
+      wethDexInstance.address,
     );
 
     const dexRouterAddress = dexRouterInstance.address;
@@ -85,68 +87,68 @@ describe("CarbonRetirementAggregator", async () => {
 
     await wethDexInstance.setMint(
       testUniswapAddress,
-      ethers.utils.parseUnits("125000", "ether")
+      ethers.utils.parseUnits("125000", "ether"),
     );
 
     await daiDexInstance.setMint(
       testUniswapAddress,
-      ethers.utils.parseUnits("500000000", "ether")
+      ethers.utils.parseUnits("500000000", "ether"),
     );
 
     await usdcDexInstance.setMint(
       testUniswapAddress,
-      ethers.utils.parseUnits("500000000", "ether")
+      ethers.utils.parseUnits("500000000", "ether"),
     );
 
     await testUniswapInstance.addLiquidity(
       daiDexInstance.address,
       wethDexInstance.address,
       ethers.utils.parseUnits("250000000", "ether"),
-      ethers.utils.parseUnits("125000", "ether")
+      ethers.utils.parseUnits("125000", "ether"),
     );
 
     await testUniswapInstance.addLiquidity(
       daiDexInstance.address,
       usdcDexInstance.address,
       ethers.utils.parseUnits("250000000", "ether"),
-      ethers.utils.parseUnits("250000000", "ether")
+      ethers.utils.parseUnits("250000000", "ether"),
     );
 
     //retirment deployment
 
     const BaseCarbonTonne = await ethers.getContractFactory("BaseCarbonTonne");
     const CarbonRetirementAggregator = await ethers.getContractFactory(
-      "CarbonRetirementAggregator"
+      "CarbonRetirementAggregator",
     );
 
     const CarbonRetirementsStorage = await ethers.getContractFactory(
-      "CarbonRetirementsStorage"
+      "CarbonRetirementsStorage",
     );
     const RetireToucanCarbon = await ethers.getContractFactory(
-      "RetireToucanCarbon"
+      "RetireToucanCarbon",
     );
     const ToucanContractRegistry = await ethers.getContractFactory(
-      "ToucanContractRegistry"
+      "ToucanContractRegistry",
     );
     const CarbonProjectVintages = await ethers.getContractFactory(
-      "CarbonProjectVintages"
+      "CarbonProjectVintages",
     );
     const CarbonProjects = await ethers.getContractFactory("CarbonProjects");
 
     const ToucanCarbonOffsetsFactory = await ethers.getContractFactory(
-      "ToucanCarbonOffsetsFactory"
+      "ToucanCarbonOffsetsFactory",
     );
     const ToucanCarbonOffsets = await ethers.getContractFactory(
-      "ToucanCarbonOffsets"
+      "ToucanCarbonOffsets",
     );
     const ToucanCarbonOffsetsBeacon = await ethers.getContractFactory(
-      "ToucanCarbonOffsetsBeacon"
+      "ToucanCarbonOffsetsBeacon",
     );
     const CarbonOffsetBatches = await ethers.getContractFactory(
-      "CarbonOffsetBatches"
+      "CarbonOffsetBatches",
     );
     const RetirementCertificates = await ethers.getContractFactory(
-      "RetirementCertificates"
+      "RetirementCertificates",
     );
 
     const baseCarbonTonneInstance = await upgrades.deployProxy(
@@ -154,7 +156,7 @@ describe("CarbonRetirementAggregator", async () => {
       {
         kind: "uups",
         initializer: "initialize",
-      }
+      },
     );
 
     const carbonRetirementAggratorInstance = await upgrades.deployProxy(
@@ -162,7 +164,7 @@ describe("CarbonRetirementAggregator", async () => {
       {
         kind: "uups",
         initializer: "initialize",
-      }
+      },
     );
 
     const carbonRetirementsStorageInstance = await upgrades.deployProxy(
@@ -170,7 +172,7 @@ describe("CarbonRetirementAggregator", async () => {
       {
         kind: "uups",
         initializer: "initialize",
-      }
+      },
     );
 
     const retireToucanCarbonInstance = await upgrades.deployProxy(
@@ -178,7 +180,7 @@ describe("CarbonRetirementAggregator", async () => {
       {
         kind: "uups",
         initializer: "initialize",
-      }
+      },
     );
 
     const toucanContractRegistryInstance = await upgrades.deployProxy(
@@ -186,7 +188,7 @@ describe("CarbonRetirementAggregator", async () => {
       {
         kind: "uups",
         initializer: "initialize",
-      }
+      },
     );
 
     const carbonProjectVintagesInstance = await upgrades.deployProxy(
@@ -194,7 +196,7 @@ describe("CarbonRetirementAggregator", async () => {
       {
         kind: "uups",
         initializer: "initialize",
-      }
+      },
     );
 
     const carbonProjectsInstance = await upgrades.deployProxy(CarbonProjects, {
@@ -208,19 +210,19 @@ describe("CarbonRetirementAggregator", async () => {
       {
         kind: "uups",
         initializer: "initialize",
-      }
+      },
     );
 
     const toucanCarbonOffsetsInstance = await ToucanCarbonOffsets.deploy(
       "Toucan Protocol: TCO2",
       "TCO2",
       0,
-      zeroAddress
+      zeroAddress,
     );
 
     const toucanCarbonOffsetsBeaconInstance =
       await ToucanCarbonOffsetsBeacon.deploy(
-        toucanCarbonOffsetsInstance.address
+        toucanCarbonOffsetsInstance.address,
       );
 
     const carbonOffsetBatchesInstance = await upgrades.deployProxy(
@@ -229,7 +231,7 @@ describe("CarbonRetirementAggregator", async () => {
       {
         kind: "uups",
         initializer: "initialize",
-      }
+      },
     );
 
     const retirementCertificatesInstance = await upgrades.deployProxy(
@@ -238,7 +240,7 @@ describe("CarbonRetirementAggregator", async () => {
       {
         kind: "uups",
         initializer: "initialize",
-      }
+      },
     );
 
     // /////////////////////////////////////////////////////////////////////////////////////////////
@@ -246,19 +248,19 @@ describe("CarbonRetirementAggregator", async () => {
     // ///////////////////////////////////////////////////////////////////////////////////////////////
     //---------------- config CarbonRetirementsStorage
     await carbonRetirementsStorageInstance.addHelperContract(
-      retireToucanCarbonInstance.address
+      retireToucanCarbonInstance.address,
     );
 
     //----------------- config carbonRetirementAggrator
     await carbonRetirementAggratorInstance.addPool(
       baseCarbonTonneInstance.address,
-      retireToucanCarbonInstance.address
+      retireToucanCarbonInstance.address,
     );
 
     //set usdc address
     await carbonRetirementAggratorInstance.setAddress(
       0,
-      usdcDexInstance.address
+      usdcDexInstance.address,
     );
     //set treasury address
     await carbonRetirementAggratorInstance.setAddress(1, treasury.address);
@@ -266,20 +268,20 @@ describe("CarbonRetirementAggregator", async () => {
     //set carbon Retirements storage address
     await carbonRetirementAggratorInstance.setAddress(
       2,
-      carbonRetirementsStorageInstance.address
+      carbonRetirementsStorageInstance.address,
     );
 
     //config retireToucanCarbon
     await retireToucanCarbonInstance.addPool(
       baseCarbonTonneInstance.address,
-      dexRouterAddress
+      dexRouterAddress,
     );
 
     await retireToucanCarbonInstance.setMasterAggregator(
-      carbonRetirementAggratorInstance.address
+      carbonRetirementAggratorInstance.address,
     );
     await retireToucanCarbonInstance.setToucanRegistry(
-      toucanContractRegistryInstance.address
+      toucanContractRegistryInstance.address,
     );
 
     await retireToucanCarbonInstance.setFeeAmount(feeAmount);
@@ -287,36 +289,36 @@ describe("CarbonRetirementAggregator", async () => {
     ////------------------------- config toucanContractRegistry
 
     await toucanContractRegistryInstance.setCarbonProjectsAddress(
-      carbonProjectsInstance.address
+      carbonProjectsInstance.address,
     );
 
     await toucanContractRegistryInstance.setCarbonProjectVintagesAddress(
-      carbonProjectVintagesInstance.address
+      carbonProjectVintagesInstance.address,
     );
 
     await toucanContractRegistryInstance.setToucanCarbonOffsetsFactoryAddress(
-      toucanCarbonOffsetsFactoryInstance.address
+      toucanCarbonOffsetsFactoryInstance.address,
     );
 
     await toucanContractRegistryInstance.setCarbonOffsetBatchesAddress(
-      carbonOffsetBatchesInstance.address
+      carbonOffsetBatchesInstance.address,
     );
     await toucanContractRegistryInstance.setCarbonOffsetBadgesAddress(
-      retirementCertificatesInstance.address
+      retirementCertificatesInstance.address,
     );
 
     ///// -------- config  carbonProjectVintages
     carbonProjectVintagesInstance.setToucanContractRegistry(
-      toucanContractRegistryInstance.address
+      toucanContractRegistryInstance.address,
     );
 
     ///-------------------- config baseCarbonTonne
     await baseCarbonTonneInstance.setSupplyCap(
-      ethers.utils.parseUnits("100000", "ether")
+      ethers.utils.parseUnits("100000", "ether"),
     );
 
     await baseCarbonTonneInstance.setToucanContractRegistry(
-      toucanContractRegistryInstance.address
+      toucanContractRegistryInstance.address,
     );
     await baseCarbonTonneInstance.setFeeRedeemPercentage(toucanFee);
 
@@ -324,7 +326,7 @@ describe("CarbonRetirementAggregator", async () => {
 
     await carbonOffsetBatchesInstance.grantRole(
       VERIFIER_ROLE,
-      verifier.address
+      verifier.address,
     );
 
     /////////////////////////////////////////////////////////// factionlize
@@ -350,7 +352,7 @@ describe("CarbonRetirementAggregator", async () => {
       "",
       "",
       "",
-      ""
+      "",
     );
 
     const now = parseInt(new Date().getTime() / 1000);
@@ -369,12 +371,12 @@ describe("CarbonRetirementAggregator", async () => {
       "coBenefits",
       "correspAdjustment",
       "additionalCertification",
-      "uri"
+      "uri",
     );
     //      deployFromVintage
 
     await toucanCarbonOffsetsFactoryInstance.setBeacon(
-      toucanCarbonOffsetsBeaconInstance.address
+      toucanCarbonOffsetsBeaconInstance.address,
     );
 
     await toucanCarbonOffsetsFactoryInstance.deployFromVintage(1);
@@ -386,7 +388,7 @@ describe("CarbonRetirementAggregator", async () => {
       1,
       "12345",
       10000,
-      "uri"
+      "uri",
     );
 
     await carbonOffsetBatchesInstance.connect(verifier).confirmRetirement(1);
@@ -407,26 +409,27 @@ describe("CarbonRetirementAggregator", async () => {
 
     await usdcDexInstance.setMint(
       testUniswapInstance.address,
-      ethers.utils.parseUnits("20000", "ether")
+      ethers.utils.parseUnits("20000", "ether"),
     );
 
     await baseCarbonTonneInstance
       .connect(planter)
       .transfer(
         testUniswapInstance.address,
-        ethers.utils.parseUnits("10000", "ether")
+        ethers.utils.parseUnits("10000", "ether"),
       );
 
     await testUniswapInstance.addLiquidity(
       usdcDexInstance.address,
       baseCarbonTonneInstance.address,
       ethers.utils.parseUnits("20000", "ether"),
-      ethers.utils.parseUnits("10000", "ether")
+      ethers.utils.parseUnits("10000", "ether"),
     );
 
     ///////////////////////////////////////////////////////////////////////////////////////
 
     return {
+      dexRouterInstance,
       usdcDexInstance,
       testUniswapInstance,
       daiDexInstance,
@@ -472,7 +475,7 @@ describe("CarbonRetirementAggregator", async () => {
         daiDexInstance.address,
         baseCarbonTonneInstance.address,
         amount1,
-        true
+        true,
       );
 
       console.log("amount", amount);
@@ -531,11 +534,11 @@ describe("CarbonRetirementAggregator", async () => {
       const carbonList = [deployedErc20];
 
       await baseCarbonTonneInstance.setFeeRedeemBurnAddress(
-        feeRedeemBurnAccount.address
+        feeRedeemBurnAccount.address,
       );
 
       await baseCarbonTonneInstance.setFeeRedeemReceiver(
-        feeRedeemRecieverAccount.address
+        feeRedeemRecieverAccount.address,
       );
 
       await daiDexInstance.setMint(funder.address, mintAmount1);
@@ -555,7 +558,7 @@ describe("CarbonRetirementAggregator", async () => {
           retiringEntityString1,
           beneficiaryString1,
           retirementMessage1,
-          carbonList
+          carbonList,
         );
     });
 
@@ -588,7 +591,7 @@ describe("CarbonRetirementAggregator", async () => {
         .connect(account1)
         .setAddress(3, account2.address)
         .should.be.rejectedWith(
-          CarbonRetirementAggregatorErrorMsg.CRT_SELECTION_LIMIT
+          CarbonRetirementAggregatorErrorMsg.CRT_SELECTION_LIMIT,
         );
 
       let USDCBeforeAddress = await carbonRetirementAggratorInstance.USDC();
@@ -602,7 +605,7 @@ describe("CarbonRetirementAggregator", async () => {
       assert.equal(
         (await carbonRetirementAggratorInstance.USDC()) != account2.address,
         true,
-        "USDC address is incorrect"
+        "USDC address is incorrect",
       );
 
       let tx1 = await carbonRetirementAggratorInstance
@@ -616,13 +619,13 @@ describe("CarbonRetirementAggregator", async () => {
       assert.equal(
         await carbonRetirementAggratorInstance.USDC(),
         account2.address,
-        "USDC address is incorrect"
+        "USDC address is incorrect",
       );
 
       assert.equal(
         await carbonRetirementAggratorInstance.treasury(),
         treasuryBeforeAddress,
-        "treasury address is incorrect"
+        "treasury address is incorrect",
       );
 
       //------change treasury
@@ -630,7 +633,7 @@ describe("CarbonRetirementAggregator", async () => {
       assert.equal(
         (await carbonRetirementAggratorInstance.treasury()) != account3.address,
         true,
-        "treasury address is incorrect"
+        "treasury address is incorrect",
       );
 
       let tx2 = await carbonRetirementAggratorInstance
@@ -644,13 +647,13 @@ describe("CarbonRetirementAggregator", async () => {
       assert.equal(
         await carbonRetirementAggratorInstance.treasury(),
         account3.address,
-        "treasury address is incorrect"
+        "treasury address is incorrect",
       );
 
       assert.equal(
         await carbonRetirementAggratorInstance.carbonRetirementStorage(),
         carbonRetirementStorageBeforeAddress,
-        "carbonRetirementStorage address is incorrect"
+        "carbonRetirementStorage address is incorrect",
       );
 
       //------change carbonRetirementStorage
@@ -659,7 +662,7 @@ describe("CarbonRetirementAggregator", async () => {
         (await carbonRetirementAggratorInstance.carbonRetirementStorage()) !=
           account4.address,
         true,
-        "carbonRetirementStorage address is incorrect"
+        "carbonRetirementStorage address is incorrect",
       );
 
       let tx3 = await carbonRetirementAggratorInstance
@@ -673,7 +676,7 @@ describe("CarbonRetirementAggregator", async () => {
       assert.equal(
         await carbonRetirementAggratorInstance.carbonRetirementStorage(),
         account4.address,
-        "carbonRetirementStorage address is incorrect"
+        "carbonRetirementStorage address is incorrect",
       );
 
       //-------change carbonRetirementStorage 2
@@ -707,7 +710,7 @@ describe("CarbonRetirementAggregator", async () => {
         .connect(account1)
         .addPool(zeroAddress, account3.address)
         .should.be.rejectedWith(
-          CarbonRetirementAggregatorErrorMsg.CRT_POOL_ADDRESS_ZERO
+          CarbonRetirementAggregatorErrorMsg.CRT_POOL_ADDRESS_ZERO,
         );
 
       //------------reject (Bridge cannot be zero address")
@@ -715,7 +718,7 @@ describe("CarbonRetirementAggregator", async () => {
         .connect(account1)
         .addPool(account2.address, zeroAddress)
         .should.be.rejectedWith(
-          CarbonRetirementAggregatorErrorMsg.CRT_BRIDGE_ADDRESS_ZERO
+          CarbonRetirementAggregatorErrorMsg.CRT_BRIDGE_ADDRESS_ZERO,
         );
 
       //-----------------work successfully
@@ -726,10 +729,10 @@ describe("CarbonRetirementAggregator", async () => {
 
       assert.equal(
         await carbonRetirementAggratorInstance.poolTokenTobridgeHelper(
-          account2.address
+          account2.address,
         ),
         account3.address,
-        "addPool is incorrect"
+        "addPool is incorrect",
       );
 
       await expect(tx1)
@@ -741,7 +744,7 @@ describe("CarbonRetirementAggregator", async () => {
         .connect(account1)
         .addPool(account2.address, account4.address)
         .should.be.rejectedWith(
-          CarbonRetirementAggregatorErrorMsg.CRT_POOL_ALREADY_ADDED
+          CarbonRetirementAggregatorErrorMsg.CRT_POOL_ALREADY_ADDED,
         );
 
       ///------------------------- test remove pool
@@ -759,7 +762,7 @@ describe("CarbonRetirementAggregator", async () => {
         .connect(account1)
         .removePool(account3.address)
         .should.be.rejectedWith(
-          CarbonRetirementAggregatorErrorMsg.CRT_POOL_NOT_ADDED
+          CarbonRetirementAggregatorErrorMsg.CRT_POOL_NOT_ADDED,
         );
 
       //-----------------work successfully
@@ -770,10 +773,10 @@ describe("CarbonRetirementAggregator", async () => {
 
       assert.equal(
         await carbonRetirementAggratorInstance.poolTokenTobridgeHelper(
-          account2.address
+          account2.address,
         ),
         zeroAddress,
-        "removePool is incorrect"
+        "removePool is incorrect",
       );
 
       await expect(tx2)
@@ -791,7 +794,7 @@ describe("CarbonRetirementAggregator", async () => {
 
       await daiDexInstance.setMint(
         carbonRetirementAggratorInstance.address,
-        ethers.utils.parseUnits("1000", "ether")
+        ethers.utils.parseUnits("1000", "ether"),
       );
 
       //------------------------start test feeWithdraw
@@ -820,15 +823,15 @@ describe("CarbonRetirementAggregator", async () => {
       assert.equal(
         Number(await daiDexInstance.balanceOf(account2.address)),
         Number(ethers.utils.parseUnits("1000", "ether")),
-        "withdraw is incorrect"
+        "withdraw is incorrect",
       );
 
       assert.equal(
         await daiDexInstance.balanceOf(
-          carbonRetirementAggratorInstance.address
+          carbonRetirementAggratorInstance.address,
         ),
         0,
-        "withdraw is incorrect"
+        "withdraw is incorrect",
       );
     });
 
@@ -840,17 +843,216 @@ describe("CarbonRetirementAggregator", async () => {
         account2,
         carbonRetirementAggratorInstance,
         baseCarbonTonneInstance,
+        retireToucanCarbonInstance,
+        daiDexInstance,
+        dexRouterInstance,
+        usdcDexInstance,
       } = await loadFixture(handleDeploymentsAndSetAddress);
 
-      //-----> test _specificRetire == false and poolToken != sourceToken
+      //-----> test _specificRetire == false and poolToken == sourceToken
 
-      await carbonRetirementAggratorInstance
-        .connect(1)
-        .getCarbonRetirmentAmount(
+      let result =
+        await carbonRetirementAggratorInstance.getCarbonRetirmentAmount(
           baseCarbonTonneInstance.address,
           baseCarbonTonneInstance.address,
           ethers.utils.parseUnits("10", "ether"),
+          false,
         );
+
+      assert.equal(
+        Number(result),
+        Number(ethers.utils.parseUnits("9.9", "ether")),
+        "result is not correct",
+      );
+
+      await retireToucanCarbonInstance.setFeeAmount(1000);
+
+      let result2 =
+        await carbonRetirementAggratorInstance.getCarbonRetirmentAmount(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("100", "ether"),
+          false,
+        );
+
+      assert.equal(
+        Number(result2),
+        Number(ethers.utils.parseUnits("90", "ether")),
+        "result2 is not correct",
+      );
+
+      await retireToucanCarbonInstance.setFeeAmount(100);
+
+      //-----> test _specificRetire == true and poolToken == sourceToken
+
+      let result3 =
+        await carbonRetirementAggratorInstance.getCarbonRetirmentAmount(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("10", "ether"),
+          true,
+        );
+
+      assert.equal(
+        Number(result3),
+        Number(ethers.utils.parseUnits("7.425", "ether")),
+        "result3 is not correct",
+      );
+
+      await retireToucanCarbonInstance.setFeeAmount(1000);
+
+      let result4 =
+        await carbonRetirementAggratorInstance.getCarbonRetirmentAmount(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("100", "ether"),
+          true,
+        );
+
+      assert.equal(
+        Number(result4),
+        Number(ethers.utils.parseUnits("67.5", "ether")),
+        "result4 is not correct",
+      );
+
+      await retireToucanCarbonInstance.setFeeAmount(100);
+
+      //-----> test _specificRetire == false and poolToken != sourceToken
+
+      let expectedSwapTokenAmount = await dexRouterInstance.getAmountsOut(
+        ethers.utils.parseUnits("10", "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ],
+      );
+
+      let result5 =
+        await carbonRetirementAggratorInstance.getCarbonRetirmentAmount(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("10", "ether"),
+          false,
+        );
+
+      assert.equal(
+        Number(result5),
+        Number(
+          Math.subtract(
+            Math.Big(expectedSwapTokenAmount[2]),
+            Math.divide(Math.Big(expectedSwapTokenAmount[2]).mul(1), 100),
+          ),
+        ),
+        "result5 is not correct",
+      );
+
+      await retireToucanCarbonInstance.setFeeAmount(1000);
+
+      let expectedSwapTokenAmount2 = await dexRouterInstance.getAmountsOut(
+        ethers.utils.parseUnits("100", "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ],
+      );
+
+      let result6 =
+        await carbonRetirementAggratorInstance.getCarbonRetirmentAmount(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("100", "ether"),
+          false,
+        );
+
+      assert.equal(
+        Number(result6),
+        Number(
+          Math.subtract(
+            Math.Big(expectedSwapTokenAmount2[2]),
+            Math.divide(Math.Big(expectedSwapTokenAmount2[2]).mul(1), 10),
+          ),
+        ),
+        "result6 is not correct",
+      );
+      await retireToucanCarbonInstance.setFeeAmount(100);
+
+      //-----> test _specificRetire == true and poolToken != sourceToken
+
+      let expectedSwapTokenAmount3 = await dexRouterInstance.getAmountsOut(
+        ethers.utils.parseUnits("10", "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ],
+      );
+
+      let result7 =
+        await carbonRetirementAggratorInstance.getCarbonRetirmentAmount(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("10", "ether"),
+          true,
+        );
+
+      assert.equal(
+        Number(result7),
+        Number(
+          Math.divide(
+            Math.mul(
+              Math.subtract(
+                Math.Big(expectedSwapTokenAmount3[2]),
+                Math.divide(Math.Big(expectedSwapTokenAmount3[2]).mul(1), 100),
+              ),
+              3,
+            ),
+            4,
+          ),
+        ),
+        "result7 is not correct",
+      );
+
+      //-----> test _specificRetire == true and poolToken != sourceToken
+
+      await retireToucanCarbonInstance.setFeeAmount(1000);
+
+      let expectedSwapTokenAmount4 = await dexRouterInstance.getAmountsOut(
+        ethers.utils.parseUnits("100", "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ],
+      );
+
+      let result8 =
+        await carbonRetirementAggratorInstance.getCarbonRetirmentAmount(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("100", "ether"),
+          true,
+        );
+
+      assert.equal(
+        Number(result8),
+        Number(
+          Math.divide(
+            Math.mul(
+              Math.subtract(
+                Math.Big(expectedSwapTokenAmount4[2]),
+                Math.divide(Math.Big(expectedSwapTokenAmount4[2]).mul(1), 10),
+              ),
+              3,
+            ),
+            4,
+          ),
+        ),
+        "result8 is not correct",
+      );
+
+      await retireToucanCarbonInstance.setFeeAmount(100);
     });
   });
 });
