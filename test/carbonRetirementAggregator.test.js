@@ -9,6 +9,7 @@ const { ethers, upgrades } = require("hardhat");
 
 const assert = require("chai").assert;
 require("chai").use(require("chai-as-promised")).should();
+const Math = require("./math");
 
 const {
   OwnableErrorMsg,
@@ -454,6 +455,7 @@ describe("CarbonRetirementAggregator", async () => {
       account4,
       account5,
       deployedErc20,
+      dexRouterInstance,
     };
   }
 
@@ -461,22 +463,163 @@ describe("CarbonRetirementAggregator", async () => {
     it("test getSourceAmount", async () => {
       const {
         daiDexInstance,
+        usdcDexInstance,
         baseCarbonTonneInstance,
         carbonRetirementAggratorInstance,
-        deployedErc20,
+        dexRouterInstance,
       } = await loadFixture(handleDeploymentsAndSetAddress);
 
       const amount1 = await ethers.utils.parseUnits("10", "ether");
 
-      const amount = await carbonRetirementAggratorInstance.getSourceAmount(
-        daiDexInstance.address,
-        baseCarbonTonneInstance.address,
-        amount1,
-        true
+      const sourceAmount1 =
+        await carbonRetirementAggratorInstance.getSourceAmount(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          amount1,
+          false
+        );
+
+      const sourceAmount2 =
+        await carbonRetirementAggratorInstance.getSourceAmount(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          amount1,
+          true
+        );
+
+      const sourceAmount3 =
+        await carbonRetirementAggratorInstance.getSourceAmount(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          amount1,
+          false
+        );
+      const sourceAmount4 =
+        await carbonRetirementAggratorInstance.getSourceAmount(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          amount1,
+          true
+        );
+
+      let expectedSwapTokenAmount1 = await dexRouterInstance.getAmountsIn(
+        ethers.utils.parseUnits("10.1", "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ]
+      );
+
+      assert.equal(
+        Number(sourceAmount1),
+        Number(amount1),
+        "sourceAmount1 is incorrect"
+      );
+
+      assert.equal(
+        Number(sourceAmount2),
+        Number(expectedSwapTokenAmount1[0]),
+        "sourceAmount2 is incorrect"
+      );
+
+      assert.equal(
+        Number(sourceAmount3),
+        Number(amount1),
+        "sourceAmount1 is incorrect"
+      );
+
+      assert.equal(
+        Number(sourceAmount4),
+        Number(Math.add(amount1, Math.divide(Math.mul(amount1, 100), 10000))),
+        "sourceAmount1 is incorrect"
       );
     });
 
-    it("Should set the right unlockTime", async () => {
+    it("test getSourceAmountSpecific", async () => {
+      const {
+        daiDexInstance,
+        usdcDexInstance,
+        baseCarbonTonneInstance,
+        carbonRetirementAggratorInstance,
+        dexRouterInstance,
+      } = await loadFixture(handleDeploymentsAndSetAddress);
+
+      const amount1 = await ethers.utils.parseUnits("10", "ether");
+
+      const sourceAmount1 =
+        await carbonRetirementAggratorInstance.getSourceAmountSpecific(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          amount1,
+          false
+        );
+
+      const sourceAmount2 =
+        await carbonRetirementAggratorInstance.getSourceAmountSpecific(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          amount1,
+          true
+        );
+
+      const sourceAmount3 =
+        await carbonRetirementAggratorInstance.getSourceAmountSpecific(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          amount1,
+          false
+        );
+      const sourceAmount4 =
+        await carbonRetirementAggratorInstance.getSourceAmountSpecific(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          amount1,
+          true
+        );
+
+      let exactToucanSwapping = Math.Big(amount1)
+        .mul(100)
+        .div(75)
+        .add(Math.Big(amount1).mul(feeAmount).div(10000))
+        .toString()
+        .split(".")[0];
+
+      let expectedSwapTokenAmount = await dexRouterInstance.getAmountsIn(
+        ethers.utils.parseUnits(exactToucanSwapping, "wei"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ]
+      );
+
+      assert.equal(
+        Number(sourceAmount1),
+        Number(amount1),
+        "sourceAmount1 is incorrect"
+      );
+
+      assert.equal(
+        Number(sourceAmount2),
+        Number(expectedSwapTokenAmount[0]),
+        "sourceAmount2 is incorrect"
+      );
+
+      assert.equal(
+        Number(sourceAmount3),
+        Number(amount1),
+        "sourceAmount1 is incorrect"
+      );
+
+      assert.equal(
+        Number(sourceAmount4),
+        Number(exactToucanSwapping),
+        "sourceAmount1 is incorrect"
+      );
+    });
+
+    it("Should retireCarbon", async () => {
       let {
         usdcDexInstance,
         testUniswapInstance,
@@ -845,7 +988,7 @@ describe("CarbonRetirementAggregator", async () => {
         .getCarbonRetirmentAmount(
           baseCarbonTonneInstance.address,
           baseCarbonTonneInstance.address,
-          ethers.utils.parseUnits("10", "ether"),
+          ethers.utils.parseUnits("10", "ether")
         );
     });
   });
