@@ -1118,6 +1118,1155 @@ describe("CarbonRetirementAggregator", async () => {
   describe("test main function", function () {
     const zeroAddress = "0x0000000000000000000000000000000000000000";
 
+    it("test retireCarbon (amountInCarbon = false)", async () => {
+      let {
+        account1,
+        account2,
+        account3,
+        account4,
+        account5,
+        carbonRetirementAggratorInstance,
+        baseCarbonTonneInstance,
+        retireToucanCarbonInstance,
+        carbonRetirementsStorageInstance,
+        retirementCertificatesInstance,
+        daiDexInstance,
+        dexRouterInstance,
+        usdcDexInstance,
+      } = await loadFixture(handleDeploymentsAndSetAddress);
+
+      let funder = account5;
+
+      await daiDexInstance.setMint(
+        funder.address,
+        ethers.utils.parseUnits("10", "ether")
+      );
+
+      await retireToucanCarbonInstance.setFeeAmount(0);
+
+      await daiDexInstance
+        .connect(funder)
+        .approve(
+          carbonRetirementAggratorInstance.address,
+          ethers.utils.parseUnits("10", "ether")
+        );
+
+      let expectedSwapTokenAmount = await dexRouterInstance.getAmountsOut(
+        ethers.utils.parseUnits("3", "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ]
+      );
+
+      //----> founder buy tco2
+
+      await carbonRetirementAggratorInstance
+        .connect(funder)
+        .retireCarbon(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("3", "ether"),
+          false,
+          zeroAddress,
+          "TreejerDao address",
+          "beneficiaryString",
+          "retirementMessage"
+        );
+
+      //---> check funder dai balance
+
+      assert.equal(
+        Number(await daiDexInstance.balanceOf(funder.address)),
+        Number(ethers.utils.parseUnits("7", "ether")),
+        "funder balance is incorrect"
+      );
+
+      //---> check funder bct balance
+
+      assert.equal(
+        Number(await baseCarbonTonneInstance.balanceOf(funder.address)),
+        0,
+        "funder balance is incorrect"
+      );
+
+      //--->check retirement funder
+
+      assert.equal(
+        Number(
+          Math.subtract(
+            await carbonRetirementsStorageInstance.retirements(funder.address),
+            expectedSwapTokenAmount[2]
+          )
+        ),
+        0,
+        "funder retirement is incorrect"
+      );
+
+      //--->check certificate nft funder
+
+      assert.equal(
+        await retirementCertificatesInstance.ownerOf(1),
+        funder.address,
+        "owner certificate nft is incorrect"
+      );
+
+      //--->check treasury
+
+      assert.equal(
+        await baseCarbonTonneInstance.balanceOf(
+          await carbonRetirementAggratorInstance.treasury()
+        ),
+        0,
+        "treasury must be zero"
+      );
+
+      //-----> check retirements
+
+      let getData = await retirementCertificatesInstance.getData(1);
+
+      assert.equal(getData[0][0], "1", "getData is incorrect");
+
+      assert.equal(
+        getData[2],
+        retireToucanCarbonInstance.address,
+        "retiringEntity is not correct"
+      );
+
+      assert.equal(getData[3], funder.address, "beneficiary is incorrect");
+
+      assert.equal(
+        getData[4],
+        "TreejerDao address",
+        "retiringEntityString is incorrect"
+      );
+
+      assert.equal(
+        getData[5],
+        "beneficiaryString",
+        "beneficiaryString is incorrect"
+      );
+
+      assert.equal(
+        getData[6],
+        "retirementMessage",
+        "retirementMessage is incorrect"
+      );
+
+      //------------------------->buy with feeAmount
+
+      await retireToucanCarbonInstance.setFeeAmount(1000);
+
+      let expectedSwapTokenAmount2 = await dexRouterInstance.getAmountsOut(
+        ethers.utils.parseUnits("3", "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ]
+      );
+
+      //----> founder buy tco2
+
+      await carbonRetirementAggratorInstance
+        .connect(funder)
+        .retireCarbon(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("3", "ether"),
+          false,
+          zeroAddress,
+          "test",
+          "beneficiaryString2",
+          "retirementMessage2"
+        );
+
+      //---> check funder dai balance
+
+      assert.equal(
+        Number(await daiDexInstance.balanceOf(funder.address)),
+        Number(ethers.utils.parseUnits("4", "ether")),
+        "funder balance is incorrect"
+      );
+
+      //---> check funder bct balance
+
+      assert.equal(
+        await baseCarbonTonneInstance.balanceOf(funder.address),
+        0,
+        "funder balance is incorrect"
+      );
+
+      //--->check retirement funder
+
+      assert.equal(
+        await carbonRetirementsStorageInstance.retirements(funder.address),
+        Math.add(
+          Number(expectedSwapTokenAmount[2]),
+          Math.mul(Number(expectedSwapTokenAmount2[2]), 0.9)
+        ),
+        "funder retirement is incorrect"
+      );
+
+      //--->check certificate nft funder
+
+      assert.equal(
+        await retirementCertificatesInstance.ownerOf(2),
+        funder.address,
+        "owner certificate nft is incorrect"
+      );
+
+      //--->check treasury
+
+      assert.equal(
+        Number(Math.mul(Number(expectedSwapTokenAmount2[2]), 0.1)),
+        Number(
+          await baseCarbonTonneInstance.balanceOf(
+            await carbonRetirementAggratorInstance.treasury()
+          )
+        ),
+        "treasury is incorrect"
+      );
+
+      //-----> check retirements
+
+      let getData2 = await retirementCertificatesInstance.getData(2);
+
+      assert.equal(getData2[0][0], "2", "getData is incorrect");
+
+      assert.equal(
+        getData2[2],
+        retireToucanCarbonInstance.address,
+        "retiringEntity is not correct"
+      );
+
+      assert.equal(getData2[3], funder.address, "beneficiary is incorrect");
+
+      assert.equal(getData2[4], "test", "retiringEntityString is incorrect");
+
+      assert.equal(
+        getData2[5],
+        "beneficiaryString2",
+        "beneficiaryString is incorrect"
+      );
+
+      assert.equal(
+        getData2[6],
+        "retirementMessage2",
+        "retirementMessage is incorrect"
+      );
+
+      ////----------------------> test bct ----> bct
+
+      await retireToucanCarbonInstance.setFeeAmount(0);
+
+      await daiDexInstance
+        .connect(funder)
+        .approve(
+          dexRouterInstance.address,
+          ethers.utils.parseUnits("10", "ether")
+        );
+
+      await daiDexInstance.setMint(
+        funder.address,
+        ethers.utils.parseUnits("10", "ether")
+      );
+
+      await dexRouterInstance
+        .connect(funder)
+        .swapTokensForExactTokens(
+          ethers.utils.parseUnits("3.2", "ether"),
+          ethers.utils.parseUnits("10", "ether"),
+          [
+            daiDexInstance.address,
+            usdcDexInstance.address,
+            baseCarbonTonneInstance.address,
+          ],
+          funder.address,
+          Number(await time.latest()) + 1800
+        );
+
+      let userBeforeBalance3 = await daiDexInstance.balanceOf(funder.address);
+
+      // // //----> founder buy tco2
+
+      await baseCarbonTonneInstance
+        .connect(funder)
+        .approve(
+          carbonRetirementAggratorInstance.address,
+          ethers.utils.parseUnits("3.2", "ether")
+        );
+
+      await carbonRetirementAggratorInstance
+        .connect(funder)
+        .retireCarbon(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("2", "ether"),
+          false,
+          zeroAddress,
+          "TreejerDao3 address",
+          "beneficiaryString3",
+          "retirementMessage3"
+        );
+
+      // //---> check funder dai balance
+
+      assert.equal(
+        Number(await baseCarbonTonneInstance.balanceOf(funder.address)),
+        Number(ethers.utils.parseUnits("1.2", "ether")),
+        "funder bct balance is incorrect"
+      );
+
+      // // //--->check retirement funder
+
+      assert.equal(
+        Number(
+          await carbonRetirementsStorageInstance.retirements(funder.address)
+        ),
+        Number(
+          Math.add(
+            Number(ethers.utils.parseUnits("2", "ether")),
+            Number(expectedSwapTokenAmount[2]),
+            Math.mul(Number(expectedSwapTokenAmount2[2]), 0.9)
+          )
+        ),
+        "funder retirement is incorrect"
+      );
+
+      // // //--->check certificate nft funder
+
+      assert.equal(
+        await retirementCertificatesInstance.ownerOf(3),
+        funder.address,
+        "owner certificate nft is incorrect"
+      );
+
+      // // //--->check treasury
+
+      assert.equal(
+        Number(
+          await baseCarbonTonneInstance.balanceOf(
+            await carbonRetirementAggratorInstance.treasury()
+          )
+        ),
+        Number(Math.mul(Number(expectedSwapTokenAmount2[2]), 0.1)),
+        "treasury incorrect"
+      );
+
+      // // //-----> check retirements
+
+      let getData3 = await retirementCertificatesInstance.getData(3);
+
+      assert.equal(getData3[0][0], "3", "getData is incorrect");
+
+      assert.equal(
+        getData3[2],
+        retireToucanCarbonInstance.address,
+        "retiringEntity is not correct"
+      );
+
+      assert.equal(getData3[3], funder.address, "beneficiary is incorrect");
+
+      assert.equal(
+        getData3[4],
+        "TreejerDao3 address",
+        "retiringEntityString is incorrect"
+      );
+
+      assert.equal(
+        getData3[5],
+        "beneficiaryString3",
+        "beneficiaryString3 is incorrect"
+      );
+
+      assert.equal(
+        getData3[6],
+        "retirementMessage3",
+        "retirementMessage3 is incorrect"
+      );
+
+      // // //------------------------->buy with feeAmount
+
+      await retireToucanCarbonInstance.setFeeAmount(2000);
+
+      // // //----> founder buy tco2
+
+      await carbonRetirementAggratorInstance
+        .connect(funder)
+        .retireCarbon(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("1.2", "ether"),
+          false,
+          account4.address,
+          "test4",
+          "beneficiaryString4",
+          "retirementMessage4"
+        );
+
+      // // //---> check funder dai balance
+
+      assert.equal(
+        await baseCarbonTonneInstance.balanceOf(funder.address),
+        0,
+        "funder balance is incorrect"
+      );
+
+      // // //--->check retirement funder
+
+      assert.equal(
+        Number(
+          await carbonRetirementsStorageInstance.retirements(funder.address)
+        ),
+        Number(
+          Math.add(
+            Number(ethers.utils.parseUnits("2", "ether")),
+            Number(expectedSwapTokenAmount[2]),
+            Math.mul(Number(expectedSwapTokenAmount2[2]), 0.9)
+          )
+        ),
+        "funder retirement is incorrect"
+      );
+
+      assert.equal(
+        Number(
+          await carbonRetirementsStorageInstance.retirements(account4.address)
+        ),
+        Number(ethers.utils.parseUnits(".96", "ether")),
+        "funder retirement is incorrect"
+      );
+
+      // // //--->check certificate nft funder
+
+      assert.equal(
+        await retirementCertificatesInstance.ownerOf(4),
+        account4.address,
+        "owner certificate nft is incorrect"
+      );
+
+      // // //-----> check retirements
+
+      let getData4 = await retirementCertificatesInstance.getData(4);
+
+      assert.equal(getData4[0][0], "4", "getData is incorrect");
+
+      assert.equal(
+        getData4[2],
+        retireToucanCarbonInstance.address,
+        "retiringEntity is not correct"
+      );
+
+      assert.equal(getData4[3], account4.address, "beneficiary is incorrect");
+
+      assert.equal(getData4[4], "test4", "retiringEntityString is incorrect");
+
+      assert.equal(
+        getData4[5],
+        "beneficiaryString4",
+        "beneficiaryString is incorrect"
+      );
+
+      assert.equal(
+        getData4[6],
+        "retirementMessage4",
+        "retirementMessage is incorrect"
+      );
+    });
+
+    it("test retireCarbon (amountInCarbon = true)", async () => {
+      let {
+        account1,
+        account2,
+        account3,
+        account5,
+        carbonRetirementAggratorInstance,
+        baseCarbonTonneInstance,
+        retireToucanCarbonInstance,
+        carbonRetirementsStorageInstance,
+        retirementCertificatesInstance,
+        daiDexInstance,
+        dexRouterInstance,
+        usdcDexInstance,
+      } = await loadFixture(handleDeploymentsAndSetAddress);
+
+      let funder = account3;
+
+      await daiDexInstance.setMint(
+        funder.address,
+        ethers.utils.parseUnits("10", "ether")
+      );
+
+      await retireToucanCarbonInstance.setFeeAmount(0);
+
+      await daiDexInstance
+        .connect(funder)
+        .approve(
+          carbonRetirementAggratorInstance.address,
+          ethers.utils.parseUnits("10", "ether")
+        );
+
+      let expectedSwapTokenAmount = await dexRouterInstance.getAmountsIn(
+        ethers.utils.parseUnits("1", "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ]
+      );
+
+      let userBeforeBalance = await daiDexInstance.balanceOf(funder.address);
+
+      //----> founder buy tco2
+
+      await carbonRetirementAggratorInstance
+        .connect(funder)
+        .retireCarbon(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("1", "ether"),
+          true,
+          zeroAddress,
+          "TreejerDao address",
+          "beneficiaryString",
+          "retirementMessage"
+        );
+
+      //---> check funder dai balance
+
+      assert.equal(
+        userBeforeBalance,
+        Math.add(
+          Number(expectedSwapTokenAmount[0]),
+          Number(await daiDexInstance.balanceOf(funder.address))
+        ),
+        "funder balance is incorrect"
+      );
+
+      //--->check retirement funder
+
+      assert.equal(
+        Number(
+          await carbonRetirementsStorageInstance.retirements(funder.address)
+        ),
+        Number(ethers.utils.parseUnits("1", "ether")),
+        "funder retirement is incorrect"
+      );
+
+      //--->check certificate nft funder
+
+      assert.equal(
+        await retirementCertificatesInstance.ownerOf(1),
+        funder.address,
+        "owner certificate nft is incorrect"
+      );
+
+      //--->check treasury
+
+      assert.equal(
+        await baseCarbonTonneInstance.balanceOf(
+          await carbonRetirementAggratorInstance.treasury()
+        ),
+        0,
+        "treasury must be zero"
+      );
+
+      //-----> check retirements
+
+      let getData = await retirementCertificatesInstance.getData(1);
+
+      assert.equal(getData[0][0], "1", "getData is incorrect");
+
+      assert.equal(
+        getData[2],
+        retireToucanCarbonInstance.address,
+        "retiringEntity is not correct"
+      );
+
+      assert.equal(getData[3], funder.address, "beneficiary is incorrect");
+
+      assert.equal(
+        getData[4],
+        "TreejerDao address",
+        "retiringEntityString is incorrect"
+      );
+
+      assert.equal(
+        getData[5],
+        "beneficiaryString",
+        "beneficiaryString is incorrect"
+      );
+
+      assert.equal(
+        getData[6],
+        "retirementMessage",
+        "retirementMessage is incorrect"
+      );
+
+      //------------------------->buy with feeAmount
+
+      await retireToucanCarbonInstance.setFeeAmount(1000);
+
+      let expectedSwapTokenAmount2 = await dexRouterInstance.getAmountsIn(
+        ethers.utils.parseUnits("3.3", "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ]
+      );
+
+      let userBeforeBalance2 = await daiDexInstance.balanceOf(funder.address);
+
+      //----> founder buy tco2
+
+      await carbonRetirementAggratorInstance
+        .connect(funder)
+        .retireCarbon(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("3", "ether"),
+          true,
+          zeroAddress,
+          "test",
+          "beneficiaryString2",
+          "retirementMessage2"
+        );
+
+      //---> check funder dai balance
+
+      assert.equal(
+        Number(userBeforeBalance2),
+        Number(
+          Math.add(
+            expectedSwapTokenAmount2[0],
+            await daiDexInstance.balanceOf(funder.address)
+          )
+        ),
+        "funder balance is incorrect"
+      );
+
+      //--->check retirement funder
+
+      assert.equal(
+        Number(
+          await carbonRetirementsStorageInstance.retirements(funder.address)
+        ),
+        Number(ethers.utils.parseUnits("4", "ether")),
+        "funder retirement is incorrect"
+      );
+
+      //--->check certificate nft funder
+
+      assert.equal(
+        await retirementCertificatesInstance.ownerOf(2),
+        funder.address,
+        "owner certificate nft is incorrect"
+      );
+
+      //--->check treasury
+
+      assert.equal(
+        Number(ethers.utils.parseUnits(".3", "ether")),
+        Number(
+          await baseCarbonTonneInstance.balanceOf(
+            await carbonRetirementAggratorInstance.treasury()
+          )
+        ),
+        "treasury is incorrect"
+      );
+
+      //-----> check retirements
+
+      let getData2 = await retirementCertificatesInstance.getData(2);
+
+      assert.equal(getData2[0][0], "2", "getData is incorrect");
+
+      assert.equal(
+        getData2[2],
+        retireToucanCarbonInstance.address,
+        "retiringEntity is not correct"
+      );
+
+      assert.equal(getData2[3], funder.address, "beneficiary is incorrect");
+
+      assert.equal(getData2[4], "test", "retiringEntityString is incorrect");
+
+      assert.equal(
+        getData2[5],
+        "beneficiaryString2",
+        "beneficiaryString is incorrect"
+      );
+
+      assert.equal(
+        getData2[6],
+        "retirementMessage2",
+        "retirementMessage is incorrect"
+      );
+
+      ////----------------------> test bct ----> bct
+
+      await retireToucanCarbonInstance.setFeeAmount(0);
+
+      await daiDexInstance
+        .connect(funder)
+        .approve(
+          dexRouterInstance.address,
+          ethers.utils.parseUnits("10", "ether")
+        );
+
+      await daiDexInstance.setMint(
+        funder.address,
+        ethers.utils.parseUnits("10", "ether")
+      );
+
+      await dexRouterInstance
+        .connect(funder)
+        .swapTokensForExactTokens(
+          ethers.utils.parseUnits("3.2", "ether"),
+          ethers.utils.parseUnits("10", "ether"),
+          [
+            daiDexInstance.address,
+            usdcDexInstance.address,
+            baseCarbonTonneInstance.address,
+          ],
+          funder.address,
+          Number(await time.latest()) + 1800
+        );
+
+      let userBeforeBalance3 = await daiDexInstance.balanceOf(funder.address);
+
+      // //----> founder buy tco2
+
+      await baseCarbonTonneInstance
+        .connect(funder)
+        .approve(
+          carbonRetirementAggratorInstance.address,
+          ethers.utils.parseUnits("3.2", "ether")
+        );
+
+      await carbonRetirementAggratorInstance
+        .connect(funder)
+        .retireCarbon(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("2", "ether"),
+          true,
+          zeroAddress,
+          "TreejerDao3 address",
+          "beneficiaryString3",
+          "retirementMessage3"
+        );
+
+      //---> check funder dai balance
+
+      assert.equal(
+        Number(await baseCarbonTonneInstance.balanceOf(funder.address)),
+        Number(ethers.utils.parseUnits("1.2", "ether")),
+        "funder bct balance is incorrect"
+      );
+
+      // //--->check retirement funder
+
+      assert.equal(
+        Number(
+          await carbonRetirementsStorageInstance.retirements(funder.address)
+        ),
+        Number(ethers.utils.parseUnits("6", "ether")),
+        "funder retirement is incorrect"
+      );
+
+      // //--->check certificate nft funder
+
+      assert.equal(
+        await retirementCertificatesInstance.ownerOf(3),
+        funder.address,
+        "owner certificate nft is incorrect"
+      );
+
+      // //--->check treasury
+
+      assert.equal(
+        Number(
+          await baseCarbonTonneInstance.balanceOf(
+            await carbonRetirementAggratorInstance.treasury()
+          )
+        ),
+        Number(ethers.utils.parseUnits(".3", "ether")),
+        "treasury incorrect"
+      );
+
+      // //-----> check retirements
+
+      let getData3 = await retirementCertificatesInstance.getData(3);
+
+      assert.equal(getData3[0][0], "3", "getData is incorrect");
+
+      assert.equal(
+        getData3[2],
+        retireToucanCarbonInstance.address,
+        "retiringEntity is not correct"
+      );
+
+      assert.equal(getData3[3], funder.address, "beneficiary is incorrect");
+
+      assert.equal(
+        getData3[4],
+        "TreejerDao3 address",
+        "retiringEntityString is incorrect"
+      );
+
+      assert.equal(
+        getData3[5],
+        "beneficiaryString3",
+        "beneficiaryString3 is incorrect"
+      );
+
+      assert.equal(
+        getData3[6],
+        "retirementMessage3",
+        "retirementMessage3 is incorrect"
+      );
+
+      // //------------------------->buy with feeAmount
+
+      await retireToucanCarbonInstance.setFeeAmount(2000);
+
+      // //----> founder buy tco2
+
+      await carbonRetirementAggratorInstance
+        .connect(funder)
+        .retireCarbon(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("1", "ether"),
+          true,
+          zeroAddress,
+          "test4",
+          "beneficiaryString4",
+          "retirementMessage4"
+        );
+
+      // //---> check funder dai balance
+
+      assert.equal(
+        await baseCarbonTonneInstance.balanceOf(funder.address),
+        0,
+        "funder balance is incorrect"
+      );
+
+      // //--->check retirement funder
+
+      assert.equal(
+        Number(
+          await carbonRetirementsStorageInstance.retirements(funder.address)
+        ),
+        Number(ethers.utils.parseUnits("7", "ether")),
+        "funder retirement is incorrect"
+      );
+
+      // //--->check certificate nft funder
+
+      assert.equal(
+        await retirementCertificatesInstance.ownerOf(4),
+        funder.address,
+        "owner certificate nft is incorrect"
+      );
+
+      // //--->check treasury
+
+      assert.equal(
+        Number(ethers.utils.parseUnits(".5", "ether")),
+        Number(
+          await baseCarbonTonneInstance.balanceOf(
+            await carbonRetirementAggratorInstance.treasury()
+          )
+        ),
+        "treasury is incorrect"
+      );
+
+      // //-----> check retirements
+
+      let getData4 = await retirementCertificatesInstance.getData(4);
+
+      assert.equal(getData4[0][0], "4", "getData is incorrect");
+
+      assert.equal(
+        getData4[2],
+        retireToucanCarbonInstance.address,
+        "retiringEntity is not correct"
+      );
+
+      assert.equal(getData4[3], funder.address, "beneficiary is incorrect");
+
+      assert.equal(getData4[4], "test4", "retiringEntityString is incorrect");
+
+      assert.equal(
+        getData4[5],
+        "beneficiaryString4",
+        "beneficiaryString is incorrect"
+      );
+
+      assert.equal(
+        getData4[6],
+        "retirementMessage4",
+        "retirementMessage is incorrect"
+      );
+    });
+
+    it("test retireCarbonFrom (amountInCarbon = false && beneficiaryAddress == account2)", async () => {
+      let {
+        account1,
+        account2,
+        account5,
+        carbonRetirementAggratorInstance,
+        baseCarbonTonneInstance,
+        retireToucanCarbonInstance,
+        carbonRetirementsStorageInstance,
+        retirementCertificatesInstance,
+        daiDexInstance,
+        dexRouterInstance,
+        usdcDexInstance,
+      } = await loadFixture(handleDeploymentsAndSetAddress);
+
+      let funder = account5;
+
+      await daiDexInstance.setMint(
+        funder.address,
+        ethers.utils.parseUnits("10", "ether")
+      );
+
+      await retireToucanCarbonInstance.setFeeAmount(0);
+
+      let expectedSwapTokenAmount = await dexRouterInstance.getAmountsOut(
+        ethers.utils.parseUnits("3", "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ]
+      );
+
+      await daiDexInstance
+        .connect(funder)
+        .transfer(
+          carbonRetirementAggratorInstance.address,
+          ethers.utils.parseUnits("3", "ether")
+        );
+
+      //----> founder buy tco2
+
+      await carbonRetirementAggratorInstance
+        .connect(funder)
+        .retireCarbonFrom(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("3", "ether"),
+          false,
+          account2.address,
+          "TreejerDao address",
+          "beneficiaryString",
+          "retirementMessage"
+        );
+
+      //---> check funder dai balance
+
+      assert.equal(
+        Number(await daiDexInstance.balanceOf(funder.address)),
+        Number(ethers.utils.parseUnits("7", "ether")),
+        "funder balance is incorrect"
+      );
+
+      //---> check funder bct balance
+
+      assert.equal(
+        await baseCarbonTonneInstance.balanceOf(funder.address),
+        0,
+        "funder balance is incorrect"
+      );
+
+      //--->check retirement funder
+
+      assert.equal(
+        Math.subtract(
+          await carbonRetirementsStorageInstance.retirements(account2.address),
+          expectedSwapTokenAmount[2]
+        ),
+        0,
+        "funder retirement is incorrect"
+      );
+
+      //--->check certificate nft funder
+
+      assert.equal(
+        await retirementCertificatesInstance.ownerOf(1),
+        account2.address,
+        "owner certificate nft is incorrect"
+      );
+
+      //--->check treasury
+
+      assert.equal(
+        await baseCarbonTonneInstance.balanceOf(
+          await carbonRetirementAggratorInstance.treasury()
+        ),
+        0,
+        "treasury must be zero"
+      );
+
+      //-----> check retirements
+
+      let getData = await retirementCertificatesInstance.getData(1);
+
+      assert.equal(getData[0][0], "1", "getData is incorrect");
+
+      assert.equal(
+        getData[2],
+        retireToucanCarbonInstance.address,
+        "retiringEntity is not correct"
+      );
+
+      assert.equal(getData[3], account2.address, "beneficiary is incorrect");
+
+      assert.equal(
+        getData[4],
+        "TreejerDao address",
+        "retiringEntityString is incorrect"
+      );
+
+      assert.equal(
+        getData[5],
+        "beneficiaryString",
+        "beneficiaryString is incorrect"
+      );
+
+      assert.equal(
+        getData[6],
+        "retirementMessage",
+        "retirementMessage is incorrect"
+      );
+
+      //---------------> test2
+
+      await retireToucanCarbonInstance.setFeeAmount(100);
+
+      let expectedSwapTokenAmount2 = await dexRouterInstance.getAmountsOut(
+        ethers.utils.parseUnits("3", "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ]
+      );
+
+      await daiDexInstance
+        .connect(funder)
+        .transfer(
+          carbonRetirementAggratorInstance.address,
+          ethers.utils.parseUnits("3", "ether")
+        );
+
+      //----> founder buy tco2
+
+      await carbonRetirementAggratorInstance
+        .connect(funder)
+        .retireCarbonFrom(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("3", "ether"),
+          false,
+          account2.address,
+          "TreejerDao address",
+          "beneficiaryString",
+          "retirementMessage"
+        );
+
+      //---> check funder dai balance
+
+      assert.equal(
+        Number(await daiDexInstance.balanceOf(funder.address)),
+        Number(ethers.utils.parseUnits("4", "ether")),
+        "funder balance is incorrect"
+      );
+
+      //---> check funder bct balance
+
+      assert.equal(
+        await baseCarbonTonneInstance.balanceOf(funder.address),
+        0,
+        "funder balance is incorrect"
+      );
+
+      //--->check retirement funder
+
+      assert.equal(
+        Number(
+          await carbonRetirementsStorageInstance.retirements(account2.address)
+        ),
+        Number(
+          Math.Big(expectedSwapTokenAmount[2]).plus(
+            Math.Big(expectedSwapTokenAmount2[2]).minus(
+              Math.Big(expectedSwapTokenAmount2[2]).times(1).div(100)
+            )
+          )
+        ),
+        "funder retirement is incorrect"
+      );
+
+      //--->check certificate nft funder
+
+      assert.equal(
+        await retirementCertificatesInstance.ownerOf(1),
+        account2.address,
+        "owner certificate nft is incorrect"
+      );
+
+      //--->check treasury
+
+      assert.equal(
+        Number(
+          await baseCarbonTonneInstance.balanceOf(
+            await carbonRetirementAggratorInstance.treasury()
+          )
+        ),
+        Number(Math.Big(expectedSwapTokenAmount2[2]).times(1).div(100)),
+        "treasury must be zero"
+      );
+
+      //-----> check retirements
+
+      let getData2 = await retirementCertificatesInstance.getData(1);
+
+      assert.equal(getData2[0][0], "1", "getData is incorrect");
+
+      assert.equal(
+        getData2[2],
+        retireToucanCarbonInstance.address,
+        "retiringEntity is not correct"
+      );
+
+      assert.equal(getData2[3], account2.address, "beneficiary is incorrect");
+
+      assert.equal(
+        getData2[4],
+        "TreejerDao address",
+        "retiringEntityString is incorrect"
+      );
+
+      assert.equal(
+        getData2[5],
+        "beneficiaryString",
+        "beneficiaryString is incorrect"
+      );
+
+      assert.equal(
+        getData2[6],
+        "retirementMessage",
+        "retirementMessage is incorrect"
+      );
+    });
+
     it("test retireCarbonFrom (amountInCarbon = false)", async () => {
       let {
         account1,
@@ -1293,6 +2442,125 @@ describe("CarbonRetirementAggregator", async () => {
       assert.equal(
         getData[6],
         "retirementMessage",
+        "retirementMessage is incorrect"
+      );
+
+      //---------> test 2
+
+      await retireToucanCarbonInstance.setFeeAmount(100);
+
+      await daiDexInstance
+        .connect(account4)
+        .transfer(
+          carbonRetirementAggratorInstance.address,
+          ethers.utils.parseUnits("5", "ether")
+        );
+
+      let expectedSwapTokenAmount2 = await dexRouterInstance.getAmountsOut(
+        ethers.utils.parseUnits("5", "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ]
+      );
+
+      //----> founder buy tco2
+
+      await carbonRetirementAggratorInstance
+        .connect(account4)
+        .retireCarbonFrom(
+          daiDexInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("5", "ether"),
+          false,
+          zeroAddress,
+          "TreejerDao address(test2)",
+          "beneficiaryString(test2)",
+          "retirementMessage(test2)"
+        );
+
+      //---> check account4 dai balance
+
+      assert.equal(
+        Number(await daiDexInstance.balanceOf(account4.address)),
+        Number(ethers.utils.parseUnits("5", "ether")),
+        "account4 balance is incorrect"
+      );
+
+      //---> check account4 bct balance
+
+      assert.equal(
+        await baseCarbonTonneInstance.balanceOf(account4.address),
+        0,
+        "account4 balance is incorrect"
+      );
+
+      //--->check retirement account4
+
+      assert.equal(
+        Number(
+          Math.Big(
+            await carbonRetirementsStorageInstance.retirements(account4.address)
+          )
+        ),
+        Number(
+          Math.Big(expectedSwapTokenAmount2[2]).minus(
+            Math.Big(expectedSwapTokenAmount2[2]).times(1).div(100)
+          )
+        ),
+        "account4 retirement is incorrect"
+      );
+
+      //--->check certificate nft funder
+
+      assert.equal(
+        await retirementCertificatesInstance.ownerOf(2),
+        account4.address,
+        "owner certificate nft is incorrect"
+      );
+
+      //--->check treasury
+
+      assert.equal(
+        Number(
+          await baseCarbonTonneInstance.balanceOf(
+            await carbonRetirementAggratorInstance.treasury()
+          )
+        ),
+        Number(Math.Big(expectedSwapTokenAmount2[2]).times(1).div(100)),
+        "treasury must be zero"
+      );
+
+      //-----> check retirements
+
+      let getData2 = await retirementCertificatesInstance.getData(2);
+
+      assert.equal(getData2[0][0], "2", "getData is incorrect");
+
+      assert.equal(
+        getData2[2],
+        retireToucanCarbonInstance.address,
+        "retiringEntity is not correct"
+      );
+
+      assert.equal(getData2[3], account4.address, "beneficiary is incorrect");
+
+      assert.equal(
+        getData2[4],
+        "TreejerDao address(test2)",
+        "retiringEntityString is incorrect"
+      );
+
+      assert.equal(
+        getData2[5],
+        "beneficiaryString(test2)",
+        "beneficiaryString is incorrect"
+      );
+
+      assert.equal(
+        getData2[6],
+        "retirementMessage(test2)",
         "retirementMessage is incorrect"
       );
 
@@ -2148,11 +3416,6 @@ describe("CarbonRetirementAggregator", async () => {
         .add(Math.Big(offsetAmount1).mul(1).div(100));
 
       let exactToucanSwappingNumber = Math.Big(exactToucanSwapping).div(1e18);
-
-      console.log(
-        "exactToucanSwappingNumber",
-        exactToucanSwappingNumber.toString()
-      );
 
       let exactToucanFee = Math.Big(offsetAmount1)
         .mul(100)
