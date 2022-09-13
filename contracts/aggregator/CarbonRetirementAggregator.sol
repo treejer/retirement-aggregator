@@ -55,7 +55,7 @@ contract CarbonRetirementAggregator is
     ) public {
         require(
             poolTokenTobridgeHelper[_poolToken] != address(0),
-            "Pool Token Not Accepted."
+            "CRA:Pool Token Not Accepted."
         );
 
         uint256 sourceAmount = getSourceAmount(
@@ -102,7 +102,7 @@ contract CarbonRetirementAggregator is
     ) public {
         require(
             poolTokenTobridgeHelper[_poolToken] != address(0),
-            "Pool Token Not Accepted."
+            "CRA:Pool Token Not Accepted."
         );
 
         uint256 sourceAmount = getSourceAmount(
@@ -115,7 +115,7 @@ contract CarbonRetirementAggregator is
         require(
             IERC20Upgradeable(_sourceToken).balanceOf(address(this)) ==
                 sourceAmount,
-            "Source tokens not transferred."
+            "CRA:Source tokens not transferred."
         );
 
         IERC20Upgradeable(_sourceToken).safeIncreaseAllowance(
@@ -150,7 +150,7 @@ contract CarbonRetirementAggregator is
     ) public {
         require(
             poolTokenTobridgeHelper[_poolToken] != address(0),
-            "Pool Token Not Accepted."
+            "CRA:Pool Token Not Accepted."
         );
 
         uint256 sourceAmount = getSourceAmountSpecific(
@@ -199,7 +199,7 @@ contract CarbonRetirementAggregator is
     ) public {
         require(
             poolTokenTobridgeHelper[_poolToken] != address(0),
-            "Pool Token Not Accepted."
+            "CRA:Pool Token Not Accepted."
         );
 
         uint256 sourceAmount = getSourceAmountSpecific(
