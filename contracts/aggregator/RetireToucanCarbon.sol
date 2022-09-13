@@ -79,7 +79,7 @@ contract RetireToucanCarbon is
     ) public {
         require(
             poolRouter[_poolToken] != address(0),
-            "Not a Toucan Carbon Token"
+            "RTC:Not a Toucan Carbon Token."
         );
 
         uint256 fee;
