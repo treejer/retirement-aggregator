@@ -19,7 +19,7 @@ interface IRetireBridgeCommon {
 
     function feeAmount() external view returns (uint256);
 
-    function getSpecificCarbonFee(address _poolToken, uint256 _poolAmount)
+    function getCarbonRetirmentAmount(address _poolToken, uint256 _poolAmount)
         external
         view
         returns (uint256);

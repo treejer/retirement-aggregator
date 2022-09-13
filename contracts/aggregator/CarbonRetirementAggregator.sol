@@ -305,7 +305,7 @@ contract CarbonRetirementAggregator is
         totalCarbon = totalCarbon - fee;
 
         if (_specificRetire) {
-            totalCarbon -= retireBridgeCarbon.getSpecificCarbonFee(
+            totalCarbon -= retireBridgeCarbon.getCarbonRetirmentAmount(
                 _poolToken,
                 totalCarbon
             );
