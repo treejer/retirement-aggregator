@@ -3425,21 +3425,19 @@ describe("CarbonRetirementAggregator", async () => {
       await daiDexInstance.resetAcc(funder.address);
     });
 
-    it("Should retireCarbonSpecific (amountInCarbon=false) (without toucan fee)", async () => {
+    it("test retireCarbonSpecific (amountInCarbon=true) (without toucan fee)", async () => {
       let {
         usdcDexInstance,
         daiDexInstance,
         baseCarbonTonneInstance,
         carbonRetirementAggratorInstance,
         carbonRetirementsStorageInstance,
-        retireToucanCarbonInstance,
-        toucanCarbonOffsetsFactoryInstance,
-        retirementCertificatesInstance,
-        account3,
         feeRedeemRecieverAccount,
         feeRedeemBurnAccount,
         deployedErc20,
         dexRouterInstance,
+        account3,
+        retireToucanCarbonInstance,
       } = await loadFixture(handleDeploymentsAndSetAddress);
 
       let funder = account3;
@@ -3447,14 +3445,29 @@ describe("CarbonRetirementAggregator", async () => {
       const offsetAmount1 = ethers.utils.parseUnits("1", "ether");
       const approvedAmount = ethers.utils.parseUnits("3", "ether");
       const mintAmount1 = ethers.utils.parseUnits("10", "ether");
+
       const sourceToken = daiDexInstance.address;
       const poolToken = baseCarbonTonneInstance.address;
-      const amountInCarbon = false;
+      const amountInCarbon = true;
       const beneficiaryAddress1 = funder.address;
       const retiringEntityString1 = "retiringEntityString";
       const beneficiaryString1 = "beneficiaryString";
       const retirementMessage1 = "beneficiaryString";
       const carbonList = [deployedErc20];
+
+      let exactToucanSwapping = Math.Big(offsetAmount1)
+        .add(Math.Big(offsetAmount1).mul(feeAmount).div(10000))
+        .toString()
+        .split(".")[0];
+
+      let expectedSwapTokenAmount = await dexRouterInstance.getAmountsIn(
+        ethers.utils.parseUnits(exactToucanSwapping, "wei"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ]
+      );
 
       await baseCarbonTonneInstance.setFeeRedeemBurnAddress(
         feeRedeemBurnAccount.address
@@ -3469,15 +3482,6 @@ describe("CarbonRetirementAggregator", async () => {
       await daiDexInstance
         .connect(funder)
         .approve(carbonRetirementAggratorInstance.address, approvedAmount);
-
-      let expectedSwapTokenAmount = await dexRouterInstance.getAmountsOut(
-        offsetAmount1,
-        [
-          daiDexInstance.address,
-          usdcDexInstance.address,
-          baseCarbonTonneInstance.address,
-        ]
-      );
 
       // redeem toucan fee
       await baseCarbonTonneInstance.addRedeemFeeExemptedAddress(
@@ -3498,52 +3502,28 @@ describe("CarbonRetirementAggregator", async () => {
           carbonList
         );
 
-      const fee1 = Math.divide(
-        Math.mul(expectedSwapTokenAmount[2], feeAmount),
-        10000
-      );
-
-      //because toucan has no fee
-      const exactRetiredAmount1 = Math.Big(expectedSwapTokenAmount[2]).sub(
-        fee1
-      );
+      const fee1 = Math.divide(Math.mul(offsetAmount1, feeAmount), 10000);
 
       let retirements1 = await carbonRetirementsStorageInstance.retirements(
         beneficiaryAddress1
       );
 
-      const retirementCertificatesRetirments =
-        await retirementCertificatesInstance.retirements(1);
-
-      const totalRetiredToucanCarbonOffsetsFactory =
-        await toucanCarbonOffsetsFactoryInstance.totalRetired();
-
-      assert.equal(
-        Number(retirementCertificatesRetirments.amount),
-        exactRetiredAmount1,
-        "amount is incorrect"
-      );
-
-      assert.equal(
-        Number(exactRetiredAmount1),
-        Number(totalRetiredToucanCarbonOffsetsFactory),
-        "totalRetiredToucanCarbonOffsetsFactory is not correct"
-      );
-
       let treasury = await carbonRetirementAggratorInstance.treasury();
 
-      const funderBalance = await daiDexInstance.balanceOf(funder.address);
-
       assert.equal(
-        Number(funderBalance),
-        Number(Math.subtract(mintAmount1, offsetAmount1)),
-        "funder balance is incorrect"
+        Number(offsetAmount1),
+        Number(retirements1),
+        "retirments1 is not correct"
       );
 
       assert.equal(
-        Number(exactRetiredAmount1),
-        Number(retirements1),
-        "retirments1 is not correct"
+        Number(
+          Math.Big(expectedSwapTokenAmount[0]).add(
+            await daiDexInstance.balanceOf(funder.address)
+          )
+        ),
+        Number(mintAmount1),
+        "user balance is incorrect"
       );
 
       assert.equal(
@@ -3551,6 +3531,17 @@ describe("CarbonRetirementAggregator", async () => {
         Number(fee1),
         "fee1 is incorrect"
       );
+
+      assert.equal(
+        Number(
+          await baseCarbonTonneInstance.balanceOf(
+            feeRedeemRecieverAccount.address
+          )
+        ),
+        0,
+        "toucan fee is incorrect"
+      );
+
       await daiDexInstance.resetAcc(funder.address);
     });
   });
