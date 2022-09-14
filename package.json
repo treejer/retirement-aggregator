@@ -16,5 +16,6 @@
   "scripts": {
     "prettier": "npx prettier --write .",
     "lint:prettier": "npx prettier --check ."
-  }
+  },
+  "author": "abdolazim010.ali@gmail.com and mahdigorbanzadeh.1378@gmail.com"
 }
