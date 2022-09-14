@@ -19,7 +19,7 @@ The following assumes the use of `node@>=13`.
 
 ## How to Contribute
 
-To chat with us &stay up to date, join our [Discord](https://discord.gg/8WuVd2ERC2).
+To chat with us & stay up to date, join our [Discord](https://discord.gg/8WuVd2ERC2).
 
 Vulnerabilities should be disclosed directly to the Treejer team by emailing security@treejer.com.
 
