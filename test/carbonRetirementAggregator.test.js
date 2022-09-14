@@ -2392,6 +2392,7 @@ describe("CarbonRetirementAggregator", async () => {
         deployedErc20,
         dexRouterInstance,
         account3,
+        retireToucanCarbonInstance,
       } = await loadFixture(handleDeploymentsAndSetAddress);
 
       let funder = account3;
@@ -2416,7 +2417,7 @@ describe("CarbonRetirementAggregator", async () => {
       let exactToucanSwapping = Math.Big(offsetAmount1)
         .mul(100)
         .div(75)
-        .add(Math.Big(offsetAmount1).mul(1).div(100))
+        .add(Math.Big(offsetAmount1).mul(newFeeAmount).div(10000))
         .toString()
         .split(".")[0];
 
