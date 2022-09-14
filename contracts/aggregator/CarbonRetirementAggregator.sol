@@ -19,16 +19,6 @@ contract CarbonRetirementAggregator is
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize() public initializer {
-        __UUPSUpgradeable_init();
-        __Ownable_init();
-    }
-
     address public USDC;
     address public treasury;
     address public carbonRetirementStorage;
@@ -43,6 +33,22 @@ contract CarbonRetirementAggregator is
     event PoolAdded(address poolToken, address bridge);
     event PoolRemoved(address poolToken);
 
+    /** NOTE modifier for check valid address */
+    modifier validAddress(address _address) {
+        require(_address != address(0), "Invalid address");
+        _;
+    }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize() public initializer {
+        __UUPSUpgradeable_init();
+        __Ownable_init();
+    }
+
     function retireCarbon(
         address _sourceToken,
         address _poolToken,
@@ -52,7 +58,7 @@ contract CarbonRetirementAggregator is
         string memory _retiringEntityString,
         string memory _beneficiaryString,
         string memory _retirementMessage
-    ) public {
+    ) external {
         require(
             poolTokenTobridgeHelper[_poolToken] != address(0),
             "CRA:Pool Token Not Accepted."
@@ -100,7 +106,7 @@ contract CarbonRetirementAggregator is
         string memory _beneficiaryString,
         string memory _retirementMessage,
         address[] memory _carbonList
-    ) public {
+    ) external {
         require(
             poolTokenTobridgeHelper[_poolToken] != address(0),
             "CRA:Pool Token Not Accepted."
@@ -137,44 +143,6 @@ contract CarbonRetirementAggregator is
             _retirementMessage,
             _carbonList
         );
-    }
-
-    function getSourceAmount(
-        address _sourceToken,
-        address _poolToken,
-        uint256 _amount,
-        bool _amountInCarbon
-    ) public view returns (uint256) {
-        uint256 sourceAmount;
-
-        if (_amountInCarbon) {
-            (sourceAmount, ) = IRetireBridgeCommon(
-                poolTokenTobridgeHelper[_poolToken]
-            ).getNeededBuyAmount(_sourceToken, _poolToken, _amount, false);
-        } else {
-            sourceAmount = _amount;
-        }
-
-        return sourceAmount;
-    }
-
-    function getSourceAmountSpecific(
-        address _sourceToken,
-        address _poolToken,
-        uint256 _amount,
-        bool _amountInCarbon
-    ) public view returns (uint256) {
-        uint256 sourceAmount;
-
-        if (_amountInCarbon) {
-            (sourceAmount, ) = IRetireBridgeCommon(
-                poolTokenTobridgeHelper[_poolToken]
-            ).getNeededBuyAmount(_sourceToken, _poolToken, _amount, true);
-        } else {
-            sourceAmount = _amount;
-        }
-
-        return sourceAmount;
     }
 
     function getCarbonRetirmentAmount(
@@ -221,7 +189,9 @@ contract CarbonRetirementAggregator is
     function setAddress(uint256 _selection, address _newAddress)
         external
         onlyOwner
+        validAddress(_newAddress)
     {
+        //slither-disable-next-line uninitialized-local
         address oldAddress;
 
         if (_selection == 0) {
@@ -283,6 +253,44 @@ contract CarbonRetirementAggregator is
         );
 
         return true;
+    }
+
+    function getSourceAmount(
+        address _sourceToken,
+        address _poolToken,
+        uint256 _amount,
+        bool _amountInCarbon
+    ) public view returns (uint256) {
+        uint256 sourceAmount;
+
+        if (_amountInCarbon) {
+            (sourceAmount, ) = IRetireBridgeCommon(
+                poolTokenTobridgeHelper[_poolToken]
+            ).getNeededBuyAmount(_sourceToken, _poolToken, _amount, false);
+        } else {
+            sourceAmount = _amount;
+        }
+
+        return sourceAmount;
+    }
+
+    function getSourceAmountSpecific(
+        address _sourceToken,
+        address _poolToken,
+        uint256 _amount,
+        bool _amountInCarbon
+    ) public view returns (uint256) {
+        uint256 sourceAmount;
+
+        if (_amountInCarbon) {
+            (sourceAmount, ) = IRetireBridgeCommon(
+                poolTokenTobridgeHelper[_poolToken]
+            ).getNeededBuyAmount(_sourceToken, _poolToken, _amount, true);
+        } else {
+            sourceAmount = _amount;
+        }
+
+        return sourceAmount;
     }
 
     function _authorizeUpgrade(address newImplementation)

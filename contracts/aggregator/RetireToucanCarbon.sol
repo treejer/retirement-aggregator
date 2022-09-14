@@ -28,16 +28,6 @@ contract RetireToucanCarbon is
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
-    /// @custom:oz-upgrades-unsafe-allow constructor
-    constructor() {
-        _disableInitializers();
-    }
-
-    function initialize() public initializer {
-        __UUPSUpgradeable_init();
-        __Ownable_init();
-    }
-
     uint256 public feeAmount;
     address public masterAggregator;
 
@@ -67,6 +57,22 @@ contract RetireToucanCarbon is
         address indexed newAddress
     );
 
+    /** NOTE modifier for check valid address */
+    modifier validAddress(address _address) {
+        require(_address != address(0), "Invalid address");
+        _;
+    }
+
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() {
+        _disableInitializers();
+    }
+
+    function initialize() public initializer {
+        __UUPSUpgradeable_init();
+        __Ownable_init();
+    }
+
     function retire(
         address _sourceToken,
         address _poolToken,
@@ -76,7 +82,7 @@ contract RetireToucanCarbon is
         address _beneficiaryAddress,
         string memory _beneficiaryString,
         string memory _retirementMessage
-    ) public {
+    ) external {
         require(
             poolRouter[_poolToken] != address(0),
             "RTC:Not a Toucan Carbon Token."
@@ -107,12 +113,201 @@ contract RetireToucanCarbon is
         }
     }
 
+    function retireSpecific(
+        address _sourceToken,
+        address _poolToken,
+        uint256 _amount,
+        bool _amountInCarbon,
+        string memory _retiringEntityString,
+        address _beneficiaryAddress,
+        string memory _beneficiaryString,
+        string memory _retirementMessage,
+        address[] memory _carbonList
+    ) external {
+        require(
+            poolRouter[_poolToken] != address(0),
+            "Not a Toucan Carbon Token"
+        );
+
+        uint256 fee;
+        (_amount, fee) = _prepareRetireSpecific(
+            _sourceToken,
+            _poolToken,
+            _amount,
+            _amountInCarbon
+        );
+
+        _retireCarbonSpecific(
+            _amount,
+            _retiringEntityString,
+            _beneficiaryAddress,
+            _beneficiaryString,
+            _retirementMessage,
+            _poolToken,
+            _carbonList
+        );
+
+        if (feeAmount > 0) {
+            IERC20Upgradeable(_poolToken).safeTransfer(
+                ICarbonRetirementAggregator(masterAggregator).treasury(),
+                IERC20Upgradeable(_poolToken).balanceOf(address(this))
+            );
+        }
+    }
+
+    function getCarbonRetirmentAmount(address _poolToken, uint256 _poolAmount)
+        external
+        view
+        returns (uint256)
+    {
+        uint256 poolFeeAmount;
+
+        bool feeExempt = IToucanPool(_poolToken).redeemFeeExemptedAddresses(
+            address(this)
+        );
+
+        if (feeExempt) {
+            poolFeeAmount = 0;
+        } else {
+            uint256 feeRedeemBp = IToucanPool(_poolToken)
+                .feeRedeemPercentageInBase();
+            uint256 feeRedeemDivider = IToucanPool(_poolToken)
+                .feeRedeemDivider();
+            poolFeeAmount = (_poolAmount * feeRedeemBp) / feeRedeemDivider;
+        }
+
+        return poolFeeAmount;
+    }
+
+    function setFeeAmount(uint256 _amount) external onlyOwner {
+        require(_amount < 10001, "RTC:amount must be less than 10000");
+
+        uint256 oldFee = feeAmount;
+        feeAmount = _amount;
+
+        emit FeeUpdated(oldFee, feeAmount);
+    }
+
+    function setToucanRegistry(address _registry) external onlyOwner {
+        require(_registry != address(0), "Registry cannot be zero");
+
+        address oldRegistry = toucanRegistry;
+        toucanRegistry = _registry;
+        emit RegistryUpdated(oldRegistry, _registry);
+    }
+
+    function addPool(address _poolToken, address _router) external onlyOwner {
+        require(_poolToken != address(0), "RTC:Pool cannot be zero address");
+
+        require(_router != address(0), "RTC:Router cannot be zero address");
+
+        poolRouter[_poolToken] = _router;
+
+        emit PoolAdded(_poolToken, _router);
+    }
+
+    function removePool(address _poolToken) external onlyOwner {
+        require(poolRouter[_poolToken] != address(0), "RTC:Pool not added");
+
+        poolRouter[_poolToken] = address(0);
+
+        emit PoolRemoved(_poolToken);
+    }
+
+    function feeWithdraw(address _token, address _recipient)
+        external
+        onlyOwner
+    {
+        IERC20Upgradeable(_token).safeTransfer(
+            _recipient,
+            IERC20Upgradeable(_token).balanceOf(address(this))
+        );
+    }
+
+    function setMasterAggregator(address _newAddress)
+        external
+        onlyOwner
+        validAddress(_newAddress)
+    {
+        address oldAddress = masterAggregator;
+        masterAggregator = _newAddress;
+
+        emit MasterAggregatorUpdated(oldAddress, _newAddress);
+    }
+
+    function onERC721Received(
+        address,
+        address,
+        uint256 tokenId,
+        bytes memory
+    ) external virtual override returns (bytes4) {
+        lastTokenId = tokenId;
+
+        return this.onERC721Received.selector;
+    }
+
+    function getNeededBuyAmount(
+        address _sourceToken,
+        address _poolToken,
+        uint256 _poolAmount,
+        bool _specificRetire
+    ) public view returns (uint256, uint256) {
+        uint256 fee = (_poolAmount * feeAmount) / 10000;
+        uint256 totalAmount = _poolAmount + fee;
+
+        if (_specificRetire) {
+            totalAmount =
+                totalAmount +
+                _getSpecificCarbonFee(_poolToken, _poolAmount);
+        }
+
+        if (_sourceToken != _poolToken) {
+            address[] memory path = getSwapPath(_sourceToken, _poolToken);
+            uint256[] memory amountIn = IUniswapV2Router02(
+                poolRouter[_poolToken]
+            ).getAmountsIn(totalAmount, path);
+
+            totalAmount = amountIn[0];
+        }
+
+        return (totalAmount, fee);
+    }
+
+    function getSwapPath(address _sourceToken, address _poolToken)
+        public
+        view
+        returns (address[] memory)
+    {
+        address[] memory path;
+
+        address USDC = ICarbonRetirementAggregator(masterAggregator).USDC();
+
+        if (_sourceToken == USDC) {
+            path = new address[](2);
+            path[0] = _sourceToken;
+            path[1] = _poolToken;
+        } else {
+            path = new address[](3);
+            path[0] = _sourceToken;
+            path[1] = USDC;
+            path[2] = _poolToken;
+        }
+
+        return path;
+    }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyOwner
+    {}
+
     function _prepareRetire(
         address _sourceToken,
         address _poolToken,
         uint256 _amount,
         bool _amountInCarbon
-    ) internal returns (uint256, uint256) {
+    ) private returns (uint256, uint256) {
         uint256 fee;
         uint256 sourceAmount;
 
@@ -158,54 +353,12 @@ contract RetireToucanCarbon is
         return (_amount, fee);
     }
 
-    function retireSpecific(
-        address _sourceToken,
-        address _poolToken,
-        uint256 _amount,
-        bool _amountInCarbon,
-        string memory _retiringEntityString,
-        address _beneficiaryAddress,
-        string memory _beneficiaryString,
-        string memory _retirementMessage,
-        address[] memory _carbonList
-    ) public {
-        require(
-            poolRouter[_poolToken] != address(0),
-            "Not a Toucan Carbon Token"
-        );
-
-        uint256 fee;
-        (_amount, fee) = _prepareRetireSpecific(
-            _sourceToken,
-            _poolToken,
-            _amount,
-            _amountInCarbon
-        );
-
-        _retireCarbonSpecific(
-            _amount,
-            _retiringEntityString,
-            _beneficiaryAddress,
-            _beneficiaryString,
-            _retirementMessage,
-            _poolToken,
-            _carbonList
-        );
-
-        if (feeAmount > 0) {
-            IERC20Upgradeable(_poolToken).safeTransfer(
-                ICarbonRetirementAggregator(masterAggregator).treasury(),
-                IERC20Upgradeable(_poolToken).balanceOf(address(this))
-            );
-        }
-    }
-
     function _prepareRetireSpecific(
         address _sourceToken,
         address _poolToken,
         uint256 _amount,
         bool _amountInCarbon
-    ) internal returns (uint256, uint256) {
+    ) private returns (uint256, uint256) {
         uint256 fee;
         uint256 sourceAmount;
 
@@ -268,7 +421,7 @@ contract RetireToucanCarbon is
         string memory _beneficiaryString,
         string memory _retirementMessage,
         address _poolToken
-    ) internal {
+    ) private {
         if (_beneficiaryAddress == address(0)) {
             _beneficiaryAddress = msg.sender;
         }
@@ -327,7 +480,7 @@ contract RetireToucanCarbon is
         string memory _retirementMessage,
         address _poolToken,
         address[] memory _carbonList
-    ) internal {
+    ) private {
         if (_beneficiaryAddress == address(0)) {
             _beneficiaryAddress = msg.sender;
         }
@@ -336,6 +489,7 @@ contract RetireToucanCarbon is
             masterAggregator
         ).carbonRetirementStorage();
 
+        //slither-disable-next-line uninitialized-local
         uint256 totalRetirmentAmount;
 
         for (uint256 i = 0; i < _carbonList.length && _totalAmount > 0; i++) {
@@ -398,7 +552,7 @@ contract RetireToucanCarbon is
         uint256 _amount,
         bool _specificRetire
     )
-        internal
+        private
         returns (
             uint256,
             uint256,
@@ -424,59 +578,8 @@ contract RetireToucanCarbon is
         return (sourceAmount, _amount + fee, fee);
     }
 
-    function getNeededBuyAmount(
-        address _sourceToken,
-        address _poolToken,
-        uint256 _poolAmount,
-        bool _specificRetire
-    ) public view returns (uint256, uint256) {
-        uint256 fee = (_poolAmount * feeAmount) / 10000;
-        uint256 totalAmount = _poolAmount + fee;
-
-        if (_specificRetire) {
-            totalAmount =
-                totalAmount +
-                _getSpecificCarbonFee(_poolToken, _poolAmount);
-        }
-
-        if (_sourceToken != _poolToken) {
-            address[] memory path = getSwapPath(_sourceToken, _poolToken);
-            uint256[] memory amountIn = IUniswapV2Router02(
-                poolRouter[_poolToken]
-            ).getAmountsIn(totalAmount, path);
-
-            totalAmount = amountIn[0];
-        }
-
-        return (totalAmount, fee);
-    }
-
-    function getCarbonRetirmentAmount(address _poolToken, uint256 _poolAmount)
-        external
-        view
-        returns (uint256)
-    {
-        uint256 poolFeeAmount;
-
-        bool feeExempt = IToucanPool(_poolToken).redeemFeeExemptedAddresses(
-            address(this)
-        );
-
-        if (feeExempt) {
-            poolFeeAmount = 0;
-        } else {
-            uint256 feeRedeemBp = IToucanPool(_poolToken)
-                .feeRedeemPercentageInBase();
-            uint256 feeRedeemDivider = IToucanPool(_poolToken)
-                .feeRedeemDivider();
-            poolFeeAmount = (_poolAmount * feeRedeemBp) / feeRedeemDivider;
-        }
-
-        return poolFeeAmount;
-    }
-
     function _getSpecificCarbonFee(address _poolToken, uint256 _poolAmount)
-        internal
+        private
         view
         returns (uint256)
     {
@@ -502,35 +605,12 @@ contract RetireToucanCarbon is
         return poolFeeAmount;
     }
 
-    function getSwapPath(address _sourceToken, address _poolToken)
-        public
-        view
-        returns (address[] memory)
-    {
-        address[] memory path;
-
-        address USDC = ICarbonRetirementAggregator(masterAggregator).USDC();
-
-        if (_sourceToken == USDC) {
-            path = new address[](2);
-            path[0] = _sourceToken;
-            path[1] = _poolToken;
-        } else {
-            path = new address[](3);
-            path[0] = _sourceToken;
-            path[1] = USDC;
-            path[2] = _poolToken;
-        }
-
-        return path;
-    }
-
     function _swapForExactCarbon(
         address _sourceToken,
         address _poolToken,
         uint256 _carbonAmount,
         uint256 _amountIn
-    ) internal {
+    ) private {
         address[] memory path = getSwapPath(_sourceToken, _poolToken);
 
         IERC20Upgradeable(path[0]).safeIncreaseAllowance(
@@ -552,7 +632,7 @@ contract RetireToucanCarbon is
         address _sourceToken,
         address _poolToken,
         uint256 _amountIn
-    ) internal returns (uint256, uint256) {
+    ) private returns (uint256, uint256) {
         address[] memory path = getSwapPath(_sourceToken, _poolToken);
 
         IERC20Upgradeable(_sourceToken).safeIncreaseAllowance(
@@ -576,18 +656,7 @@ contract RetireToucanCarbon is
         return (totalCarbon - fee, fee);
     }
 
-    function onERC721Received(
-        address,
-        address,
-        uint256 tokenId,
-        bytes memory
-    ) external virtual override returns (bytes4) {
-        lastTokenId = tokenId;
-
-        return this.onERC721Received.selector;
-    }
-
-    function _sendRetireCert(address _beneficiary) internal {
+    function _sendRetireCert(address _beneficiary) private {
         address retireCert = IToucanContractRegistry(toucanRegistry)
             .carbonOffsetBadgesAddress();
 
@@ -597,59 +666,4 @@ contract RetireToucanCarbon is
             lastTokenId
         );
     }
-
-    function setFeeAmount(uint256 _amount) external onlyOwner {
-        require(_amount < 10001, "RTC:amount must be less than 10000");
-
-        uint256 oldFee = feeAmount;
-        feeAmount = _amount;
-
-        emit FeeUpdated(oldFee, feeAmount);
-    }
-
-    function setToucanRegistry(address _registry) external onlyOwner {
-        require(_registry != address(0), "Registry cannot be zero");
-
-        address oldRegistry = toucanRegistry;
-        toucanRegistry = _registry;
-        emit RegistryUpdated(oldRegistry, _registry);
-    }
-
-    function addPool(address _poolToken, address _router) external onlyOwner {
-        require(_poolToken != address(0), "RTC:Pool cannot be zero address");
-
-        require(_router != address(0), "RTC:Router cannot be zero address");
-
-        poolRouter[_poolToken] = _router;
-
-        emit PoolAdded(_poolToken, _router);
-    }
-
-    function removePool(address _poolToken) external onlyOwner {
-        require(poolRouter[_poolToken] != address(0), "RTC:Pool not added");
-
-        poolRouter[_poolToken] = address(0);
-
-        emit PoolRemoved(_poolToken);
-    }
-
-    function feeWithdraw(address _token, address _recipient) public onlyOwner {
-        IERC20Upgradeable(_token).safeTransfer(
-            _recipient,
-            IERC20Upgradeable(_token).balanceOf(address(this))
-        );
-    }
-
-    function setMasterAggregator(address _newAddress) external onlyOwner {
-        address oldAddress = masterAggregator;
-        masterAggregator = _newAddress;
-
-        emit MasterAggregatorUpdated(oldAddress, _newAddress);
-    }
-
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyOwner
-    {}
 }
