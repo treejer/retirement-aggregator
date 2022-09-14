@@ -59,7 +59,7 @@ contract RetireToucanCarbon is
 
     /** NOTE modifier for check valid address */
     modifier validAddress(address _address) {
-        require(_address != address(0), "Invalid address");
+        require(_address != address(0), "RTC:Invalid address");
         _;
     }
 
@@ -188,9 +188,11 @@ contract RetireToucanCarbon is
         emit FeeUpdated(oldFee, feeAmount);
     }
 
-    function setToucanRegistry(address _registry) external onlyOwner {
-        require(_registry != address(0), "Registry cannot be zero");
-
+    function setToucanRegistry(address _registry)
+        external
+        onlyOwner
+        validAddress(_registry)
+    {
         address oldRegistry = toucanRegistry;
         toucanRegistry = _registry;
         emit RegistryUpdated(oldRegistry, _registry);

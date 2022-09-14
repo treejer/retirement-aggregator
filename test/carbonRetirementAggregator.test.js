@@ -763,7 +763,7 @@ describe("CarbonRetirementAggregator", async () => {
       await carbonRetirementAggratorInstance
         .connect(account1)
         .setAddress(2, zeroAddress)
-        .should.be.rejectedWith("Invalid address");
+        .should.be.rejectedWith("CRA:Invalid address");
 
       let tx4 = await carbonRetirementAggratorInstance
         .connect(account1)
@@ -947,6 +947,8 @@ describe("CarbonRetirementAggregator", async () => {
         "result is not correct"
       );
 
+      //------------------------------
+
       await retireToucanCarbonInstance.setFeeAmount(1000);
 
       let result2 =
@@ -966,6 +968,30 @@ describe("CarbonRetirementAggregator", async () => {
       await retireToucanCarbonInstance.setFeeAmount(100);
 
       //-----> test _specificRetire == true and poolToken == sourceToken
+
+      //--------------test feeExempt true
+
+      await baseCarbonTonneInstance.addRedeemFeeExemptedAddress(
+        retireToucanCarbonInstance.address
+      );
+
+      let result15 =
+        await carbonRetirementAggratorInstance.getCarbonRetirmentAmount(
+          baseCarbonTonneInstance.address,
+          baseCarbonTonneInstance.address,
+          ethers.utils.parseUnits("10", "ether"),
+          true
+        );
+
+      assert.equal(
+        Number(result15),
+        Number(ethers.utils.parseUnits("9.9", "ether")),
+        "result15 is not correct"
+      );
+
+      await baseCarbonTonneInstance.removeRedeemFeeExemptedAddress(
+        retireToucanCarbonInstance.address
+      );
 
       let result3 =
         await carbonRetirementAggratorInstance.getCarbonRetirmentAmount(
