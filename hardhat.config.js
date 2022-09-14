@@ -1,6 +1,7 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config();
 require("@openzeppelin/hardhat-upgrades");
+require("solidity-coverage");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
@@ -17,7 +18,7 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
+        runs: 2000000000,
       },
     },
   },
@@ -27,5 +28,6 @@ module.exports = {
     cache: "./cache",
     artifacts: "./artifacts",
   },
-  mocha: { timeout: 400000000 },
+
+  mocha: { timeout: 40000 },
 };
