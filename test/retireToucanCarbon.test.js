@@ -180,6 +180,8 @@ describe("RetireToucanCarbon", async () => {
       },
     );
 
+    await retireToucanCarbonInstance.initialize().should.be.rejected;
+
     const toucanContractRegistryInstance = await upgrades.deployProxy(
       ToucanContractRegistry,
       {
@@ -664,6 +666,65 @@ describe("RetireToucanCarbon", async () => {
     );
   });
 
+  it("write test for feeWithdraw", async () => {
+    let { account1, account2, retireToucanCarbonInstance, daiDexInstance } =
+      await loadFixture(handleDeploymentsAndSetAddress);
+
+    await daiDexInstance.setMint(
+      retireToucanCarbonInstance.address,
+      ethers.utils.parseUnits("1000", "ether"),
+    );
+
+    //------------------------start test feeWithdraw
+
+    //------------reject (only owner )
+    await retireToucanCarbonInstance
+      .connect(account2)
+      .feeWithdraw(daiDexInstance.address, account2.address)
+      .should.be.rejectedWith(OwnableErrorMsg.CALLER_NOT_OWNER);
+
+    //---------------reject
+    await retireToucanCarbonInstance
+      .connect(account1)
+      .feeWithdraw(daiDexInstance.address, zeroAddress).should.be.rejected;
+
+    //---------------reject
+    await retireToucanCarbonInstance
+      .connect(account1)
+      .feeWithdraw(zeroAddress, account2.address).should.be.rejected;
+
+    //------------work successfully
+    await retireToucanCarbonInstance
+      .connect(account1)
+      .feeWithdraw(daiDexInstance.address, account2.address);
+
+    assert.equal(
+      Number(await daiDexInstance.balanceOf(account2.address)),
+      Number(ethers.utils.parseUnits("1000", "ether")),
+      "withdraw is incorrect",
+    );
+
+    assert.equal(
+      await daiDexInstance.balanceOf(retireToucanCarbonInstance.address),
+      0,
+      "withdraw is incorrect",
+    );
+  });
+
+  it("test _authorizeUpgrade", async () => {
+    let { account1, account2, retireToucanCarbonInstance, daiDexInstance } =
+      await loadFixture(handleDeploymentsAndSetAddress);
+
+    //------------reject (only owner )
+
+    await retireToucanCarbonInstance
+      .connect(account2)
+      .upgradeTo(zeroAddress)
+      .should.be.rejectedWith(OwnableErrorMsg.CALLER_NOT_OWNER);
+
+    await retireToucanCarbonInstance.connect(account1).upgradeTo(zeroAddress)
+      .should.be.rejected;
+  });
   //------------------- view func
 
   it("write test getSwapPath test", async () => {
@@ -711,58 +772,6 @@ describe("RetireToucanCarbon", async () => {
 
     assert.equal(result2[2], wethDexInstance.address, "result is not correct");
   });
-
-  // it("write test getSpecificCarbonFee", async () => {
-  //   let {
-  //     account1,
-  //     account2,
-  //     account3,
-  //     account4,
-  //     account5,
-  //     retireToucanCarbonInstance,
-  //     baseCarbonTonneInstance,
-  //   } = await loadFixture(handleDeploymentsAndSetAddress);
-
-  //   let result = await retireToucanCarbonInstance.getSpecificCarbonFee(
-  //     baseCarbonTonneInstance.address,
-  //     ethers.utils.parseUnits("150", "ether")
-  //   );
-
-  //   assert.equal(
-  //     Number(result),
-  //     ethers.utils.parseUnits("50", "ether"),
-  //     "result is not correct"
-  //   );
-
-  //   let result2 = await retireToucanCarbonInstance.getSpecificCarbonFee(
-  //     baseCarbonTonneInstance.address,
-  //     ethers.utils.parseUnits("100", "ether")
-  //   );
-
-  //   assert.equal(
-  //     result2.toString(),
-  //     "33333333333333333333",
-  //     "result2 is not correct"
-  //   );
-
-  //   await baseCarbonTonneInstance.addRedeemFeeExemptedAddress(
-  //     retireToucanCarbonInstance.address
-  //   );
-
-  //   let result3 = await retireToucanCarbonInstance.getSpecificCarbonFee(
-  //     baseCarbonTonneInstance.address,
-  //     ethers.utils.parseUnits("150", "ether")
-  //   );
-
-  //   assert.equal(Number(result3), 0, "result3 is not correct");
-
-  //   let result4 = await retireToucanCarbonInstance.getSpecificCarbonFee(
-  //     baseCarbonTonneInstance.address,
-  //     ethers.utils.parseUnits("100", "ether")
-  //   );
-
-  //   assert.equal(result4, 0, "result4 is not correct");
-  // });
 
   it("write test for getNeededBuyAmount", async () => {
     let {
@@ -1042,4 +1051,56 @@ describe("RetireToucanCarbon", async () => {
 
     await retireToucanCarbonInstance.setFeeAmount(100);
   });
+
+  // it("write test getSpecificCarbonFee", async () => {
+  //   let {
+  //     account1,
+  //     account2,
+  //     account3,
+  //     account4,
+  //     account5,
+  //     retireToucanCarbonInstance,
+  //     baseCarbonTonneInstance,
+  //   } = await loadFixture(handleDeploymentsAndSetAddress);
+
+  //   let result = await retireToucanCarbonInstance.getSpecificCarbonFee(
+  //     baseCarbonTonneInstance.address,
+  //     ethers.utils.parseUnits("150", "ether")
+  //   );
+
+  //   assert.equal(
+  //     Number(result),
+  //     ethers.utils.parseUnits("50", "ether"),
+  //     "result is not correct"
+  //   );
+
+  //   let result2 = await retireToucanCarbonInstance.getSpecificCarbonFee(
+  //     baseCarbonTonneInstance.address,
+  //     ethers.utils.parseUnits("100", "ether")
+  //   );
+
+  //   assert.equal(
+  //     result2.toString(),
+  //     "33333333333333333333",
+  //     "result2 is not correct"
+  //   );
+
+  //   await baseCarbonTonneInstance.addRedeemFeeExemptedAddress(
+  //     retireToucanCarbonInstance.address
+  //   );
+
+  //   let result3 = await retireToucanCarbonInstance.getSpecificCarbonFee(
+  //     baseCarbonTonneInstance.address,
+  //     ethers.utils.parseUnits("150", "ether")
+  //   );
+
+  //   assert.equal(Number(result3), 0, "result3 is not correct");
+
+  //   let result4 = await retireToucanCarbonInstance.getSpecificCarbonFee(
+  //     baseCarbonTonneInstance.address,
+  //     ethers.utils.parseUnits("100", "ether")
+  //   );
+
+  //   assert.equal(result4, 0, "result4 is not correct");
+  // });
 });

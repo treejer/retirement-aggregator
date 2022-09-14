@@ -18,7 +18,7 @@ module.exports = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 2000000000,
+        runs: 200,
       },
     },
   },
@@ -29,5 +29,5 @@ module.exports = {
     artifacts: "./artifacts",
   },
 
-  mocha: { timeout: 40000 },
+  mocha: { timeout: 40000000 },
 };
