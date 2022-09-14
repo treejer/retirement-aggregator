@@ -2797,6 +2797,7 @@ describe("CarbonRetirementAggregator", async () => {
         Number(fee1),
         "fee1 is incorrect"
       );
+      await daiDexInstance.resetAcc(funder.address);
     });
 
     it("test retireCarbonSpecific (amountInCarbon=true)", async () => {
@@ -2927,6 +2928,8 @@ describe("CarbonRetirementAggregator", async () => {
         Number(exactToucanFee),
         "toucan fee is incorrect"
       );
+
+      await daiDexInstance.resetAcc(funder.address);
     });
 
     it("test retireCarbonSpecific (amountInCarbon=false) (sourceToken = poolToken)", async () => {
@@ -3543,7 +3546,299 @@ describe("CarbonRetirementAggregator", async () => {
         "toucan fee is incorrect"
       );
 
-      // await daiDexInstance.resetAcc(funder.address);
+      await daiDexInstance.resetAcc(funder.address);
+    });
+
+    it("test retireCarbonSpecific (amountInCarbon=false) (3 tco2 but 2 have balance)", async () => {
+      let {
+        carbonOffsetBatchesInstance,
+        carbonProjectVintagesInstance,
+        carbonProjectsInstance,
+        baseCarbonTonneInstance,
+        carbonRetirementAggratorInstance,
+        carbonRetirementsStorageInstance,
+        retirementCertificatesInstance,
+        feeRedeemRecieverAccount,
+        feeRedeemBurnAccount,
+        deployedErc20,
+        verifier,
+        toucanCarbonOffsetsFactoryInstance,
+        account3,
+        account4,
+        ToucanCarbonOffsets,
+        daiDexInstance,
+        dexRouterInstance,
+        usdcDexInstance,
+        tco2Instance,
+        testUniswapInstance,
+      } = await loadFixture(handleDeploymentsAndSetAddress);
+
+      let funder = account3;
+      let planter = account4;
+      const offsetAmount1 = ethers.utils.parseUnits("9000", "ether");
+      const approvedAmount = ethers.utils.parseUnits("300000", "ether");
+      const mintAmount1 = ethers.utils.parseUnits("300000", "ether");
+
+      const projectVintageTokenId2 = 2;
+      const projectVintageTokenId3 = 3;
+
+      await daiDexInstance.setMint(funder.address, mintAmount1);
+
+      await daiDexInstance
+        .connect(funder)
+        .approve(carbonRetirementAggratorInstance.address, approvedAmount);
+
+      ///////////////////////// config for toucan
+
+      await carbonProjectsInstance.addNewProject(
+        planter.address,
+        "2",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      );
+
+      await carbonProjectsInstance.addNewProject(
+        planter.address,
+        "3",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      );
+
+      const now = parseInt(new Date().getTime() / 1000);
+
+      const endDate = now + 100000;
+
+      await carbonProjectVintagesInstance.addNewVintage(
+        planter.address,
+        projectVintageTokenId2,
+        "name2",
+        now,
+        endDate,
+        100000,
+        false,
+        false,
+        "coBenefits2",
+        "correspAdjustment2",
+        "additionalCertification2",
+        "uri2"
+      );
+
+      await carbonProjectVintagesInstance.addNewVintage(
+        planter.address,
+        projectVintageTokenId3,
+        "name",
+        now,
+        endDate,
+        100000,
+        false,
+        false,
+        "coBenefits3",
+        "correspAdjustment3",
+        "additionalCertification3",
+        "uri3"
+      );
+
+      //      deployFromVintage
+
+      await toucanCarbonOffsetsFactoryInstance.deployFromVintage(2);
+      await toucanCarbonOffsetsFactoryInstance.deployFromVintage(3);
+
+      let deployedErc20_2 =
+        await toucanCarbonOffsetsFactoryInstance.pvIdtoERC20(2);
+
+      let deployedErc20_3 =
+        await toucanCarbonOffsetsFactoryInstance.pvIdtoERC20(3);
+
+      // address to,
+      // uint256 projectVintageTokenId,
+      // string memory _serialNumber,
+      // uint256 quantity,
+      // string memory uri
+
+      await carbonOffsetBatchesInstance.mintBatchWithData(
+        planter.address,
+        2,
+        "2",
+        5000,
+        "uri2"
+      );
+
+      await carbonOffsetBatchesInstance.mintBatchWithData(
+        planter.address,
+        3,
+        "3",
+        5000,
+        "uri3"
+      );
+
+      await carbonOffsetBatchesInstance.connect(verifier).confirmRetirement(2);
+      //caller must be owner of the minteed nft
+      await carbonOffsetBatchesInstance.connect(planter).fractionalize(2);
+
+      const tco2Instance_2 = await ToucanCarbonOffsets.attach(deployedErc20_2);
+
+      const balance_2 = await tco2Instance_2.balanceOf(planter.address);
+
+      await tco2Instance_2
+        .connect(planter)
+        .approve(baseCarbonTonneInstance.address, balance_2);
+      await baseCarbonTonneInstance
+        .connect(planter)
+        .deposit(deployedErc20_2, balance_2);
+
+      /////// ---------------------------------
+
+      await carbonOffsetBatchesInstance.connect(verifier).confirmRetirement(3);
+      //caller must be owner of the minteed nft
+      await carbonOffsetBatchesInstance.connect(planter).fractionalize(3);
+
+      const tco2Instance_3 = await ToucanCarbonOffsets.attach(deployedErc20_3);
+
+      await usdcDexInstance.setMint(
+        testUniswapInstance.address,
+        ethers.utils.parseUnits("10000", "ether")
+      );
+
+      await baseCarbonTonneInstance
+        .connect(planter)
+        .transfer(
+          testUniswapInstance.address,
+          ethers.utils.parseUnits("5000", "ether")
+        );
+
+      await testUniswapInstance.addLiquidity(
+        usdcDexInstance.address,
+        baseCarbonTonneInstance.address,
+        ethers.utils.parseUnits("10000", "ether"),
+        ethers.utils.parseUnits("5000", "ether")
+      );
+
+      const sourceToken = daiDexInstance.address;
+      const poolToken = baseCarbonTonneInstance.address;
+      const amountInCarbon = true;
+      const beneficiaryAddress1 = funder.address;
+      const retiringEntityString1 = "retiringEntityString";
+      const beneficiaryString1 = "beneficiaryString";
+      const retirementMessage1 = "beneficiaryString";
+      const carbonList = [deployedErc20, deployedErc20_3, deployedErc20_2];
+
+      let exactToucanSwapping = new Math.Big(offsetAmount1)
+        .mul(100)
+        .div(75)
+        .add(Math.Big(offsetAmount1).mul(1).div(100));
+
+      let exactToucanSwappingNumber = Math.Big(exactToucanSwapping).div(1e18);
+
+      let exactToucanFee = Math.Big(offsetAmount1)
+        .mul(100)
+        .div(75)
+        .sub(offsetAmount1);
+
+      let expectedSwapTokenAmount = await dexRouterInstance.getAmountsIn(
+        ethers.utils.parseUnits(exactToucanSwappingNumber.toString(), "ether"),
+        [
+          daiDexInstance.address,
+          usdcDexInstance.address,
+          baseCarbonTonneInstance.address,
+        ]
+      );
+
+      await baseCarbonTonneInstance.setFeeRedeemBurnAddress(
+        feeRedeemBurnAccount.address
+      );
+
+      await baseCarbonTonneInstance.setFeeRedeemReceiver(
+        feeRedeemRecieverAccount.address
+      );
+
+      await carbonRetirementAggratorInstance
+        .connect(funder)
+        .retireCarbonSpecific(
+          sourceToken,
+          poolToken,
+          offsetAmount1,
+          amountInCarbon,
+          beneficiaryAddress1,
+          retiringEntityString1,
+          beneficiaryString1,
+          retirementMessage1,
+          carbonList
+        );
+
+      const fee1 = Math.divide(Math.mul(offsetAmount1, feeAmount), 10000);
+
+      let retirements1 = await carbonRetirementsStorageInstance.retirements(
+        beneficiaryAddress1
+      );
+
+      let certificateOwner = await retirementCertificatesInstance.ownerOf(1);
+
+      //check _sendRetireCert
+      assert.equal(
+        certificateOwner,
+        beneficiaryAddress1,
+        "owner sent to incorrect address"
+      );
+
+      let treasury = await carbonRetirementAggratorInstance.treasury();
+
+      let tco2_1 = await tco2Instance.balanceOf(
+        baseCarbonTonneInstance.address
+      );
+
+      let tco2_2 = await tco2Instance_2.balanceOf(
+        baseCarbonTonneInstance.address
+      );
+
+      let tco2_3 = await tco2Instance_3.balanceOf(
+        baseCarbonTonneInstance.address
+      );
+
+      assert.equal(
+        Number(offsetAmount1),
+        Number(retirements1),
+        "retirments1 is not correct"
+      );
+
+      assert.equal(
+        Number(
+          Math.Big(expectedSwapTokenAmount[0]).add(
+            await daiDexInstance.balanceOf(funder.address)
+          )
+        ),
+        Number(mintAmount1),
+        "user balance is incorrect"
+      );
+
+      assert.equal(
+        Number(await baseCarbonTonneInstance.balanceOf(treasury)),
+        Number(fee1),
+        "fee1 is incorrect"
+      );
+
+      assert.equal(
+        Number(
+          await baseCarbonTonneInstance.balanceOf(
+            feeRedeemRecieverAccount.address
+          )
+        ),
+        Number(exactToucanFee),
+        "toucan fee is incorrect"
+      );
+
+      await daiDexInstance.resetAcc(funder.address);
     });
   });
 });
