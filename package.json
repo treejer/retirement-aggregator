@@ -7,7 +7,8 @@
     "big.js": "6.2.1",
     "dotenv": "^16.0.2",
     "ethers": "^5.7.0",
-    "hardhat": "^2.10.2"
+    "hardhat": "^2.10.2",
+    "coveralls": "3.1.1"
   },
   "dependencies": {
     "solidity-coverage": "^0.8.2"
