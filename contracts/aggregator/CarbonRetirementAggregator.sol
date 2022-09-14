@@ -90,53 +90,6 @@ contract CarbonRetirementAggregator is
         );
     }
 
-    function retireCarbonFrom(
-        address _sourceToken,
-        address _poolToken,
-        uint256 _amount,
-        bool _amountInCarbon,
-        address _beneficiaryAddress,
-        string memory _retiringEntityString,
-        string memory _beneficiaryString,
-        string memory _retirementMessage
-    ) public {
-        require(
-            poolTokenTobridgeHelper[_poolToken] != address(0),
-            "CRA:Pool Token Not Accepted."
-        );
-
-        uint256 sourceAmount = getSourceAmount(
-            _sourceToken,
-            _poolToken,
-            _amount,
-            _amountInCarbon
-        );
-
-        require(
-            IERC20Upgradeable(_sourceToken).balanceOf(address(this)) ==
-                sourceAmount,
-            "CRA:Source tokens not transferred."
-        );
-
-        IERC20Upgradeable(_sourceToken).safeIncreaseAllowance(
-            poolTokenTobridgeHelper[_poolToken],
-            sourceAmount
-        );
-
-        IRetireCarbon(poolTokenTobridgeHelper[_poolToken]).retire(
-            _sourceToken,
-            _poolToken,
-            _amount,
-            _amountInCarbon,
-            _retiringEntityString,
-            _beneficiaryAddress != address(0)
-                ? _beneficiaryAddress
-                : msg.sender,
-            _beneficiaryString,
-            _retirementMessage
-        );
-    }
-
     function retireCarbonSpecific(
         address _sourceToken,
         address _poolToken,
@@ -164,55 +117,6 @@ contract CarbonRetirementAggregator is
             msg.sender,
             address(this),
             sourceAmount
-        );
-
-        IERC20Upgradeable(_sourceToken).safeIncreaseAllowance(
-            poolTokenTobridgeHelper[_poolToken],
-            sourceAmount
-        );
-
-        IRetireCarbon(poolTokenTobridgeHelper[_poolToken]).retireSpecific(
-            _sourceToken,
-            _poolToken,
-            _amount,
-            _amountInCarbon,
-            _retiringEntityString,
-            _beneficiaryAddress != address(0)
-                ? _beneficiaryAddress
-                : msg.sender,
-            _beneficiaryString,
-            _retirementMessage,
-            _carbonList
-        );
-    }
-
-    function retireCarbonSpecificFrom(
-        address _sourceToken,
-        address _poolToken,
-        uint256 _amount,
-        bool _amountInCarbon,
-        address _beneficiaryAddress,
-        string memory _retiringEntityString,
-        string memory _beneficiaryString,
-        string memory _retirementMessage,
-        address[] memory _carbonList
-    ) public {
-        require(
-            poolTokenTobridgeHelper[_poolToken] != address(0),
-            "CRA:Pool Token Not Accepted."
-        );
-
-        uint256 sourceAmount = getSourceAmountSpecific(
-            _sourceToken,
-            _poolToken,
-            _amount,
-            _amountInCarbon
-        );
-
-        require(
-            IERC20Upgradeable(_sourceToken).balanceOf(address(this)) ==
-                sourceAmount,
-            "Source tokens not transferred."
         );
 
         IERC20Upgradeable(_sourceToken).safeIncreaseAllowance(
