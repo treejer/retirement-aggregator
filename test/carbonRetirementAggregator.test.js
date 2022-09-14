@@ -3425,7 +3425,7 @@ describe("CarbonRetirementAggregator", async () => {
       await daiDexInstance.resetAcc(funder.address);
     });
 
-    it("test retireCarbonSpecific ( amountInCarbon=true ) (without toucan fee)", async () => {
+    it("test retireCarbonSpecific (amountInCarbon=true) (without toucan fee)", async () => {
       let {
         usdcDexInstance,
         daiDexInstance,
