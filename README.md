@@ -2,7 +2,7 @@
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/TreejerTalks?label=Follow)](https://twitter.com/TreejerTalks)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![CircleCI](https://circleci.com/gh/treejer/retirement-aggregator/tree/main.svg?style=shield)](https://app.circleci.com/pipelines/github/treejer/retirement-aggregator?branch=develop&filter=all)
+[![CircleCI](https://circleci.com/gh/treejer/retirement-aggregator/tree/develop.svg?style=shield)](https://app.circleci.com/pipelines/github/treejer/retirement-aggregator?branch=develop&filter=all)
 [![Coverage Status](https://coveralls.io/repos/github/treejer/retirement-aggregator/badge.svg?branch=develop)](https://coveralls.io/github/treejer/retirement-aggregator?branch=develop)
 
 ## Local Development
