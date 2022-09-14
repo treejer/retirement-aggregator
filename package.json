@@ -12,5 +12,9 @@
   },
   "dependencies": {
     "solidity-coverage": "^0.8.2"
+  },
+  "scripts": {
+    "prettier": "npx prettier --write .",
+    "lint:prettier": "npx prettier --check ."
   }
 }
