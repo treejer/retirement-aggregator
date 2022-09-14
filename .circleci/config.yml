@@ -39,7 +39,7 @@ jobs:
           name: coverage
           command: npx hardhat coverage
       - coveralls/upload:
-          path_to_lcov: ./final-coverage/lcov.info
+          path_to_lcov: ./coverage/lcov.info
 
 # Orchestrate our job run sequence
 workflows:
