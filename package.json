@@ -1,9 +1,21 @@
 {
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^1.0.2",
-    "hardhat": "^2.10.2"
+    "@openzeppelin/contracts": "4.7.3",
+    "@openzeppelin/contracts-upgradeable": "4.7.3",
+    "@openzeppelin/hardhat-upgrades": "^1.20.0",
+    "big.js": "6.2.1",
+    "dotenv": "^16.0.2",
+    "ethers": "^5.7.0",
+    "hardhat": "^2.10.2",
+    "coveralls": "3.1.1"
   },
   "dependencies": {
-    "dotenv": "^16.0.2"
-  }
+    "solidity-coverage": "^0.8.2"
+  },
+  "scripts": {
+    "prettier": "npx prettier --write .",
+    "lint:prettier": "npx prettier --check ."
+  },
+  "author": "abdolazim010.ali@gmail.com and mahdigorbanzadeh.1378@gmail.com"
 }
