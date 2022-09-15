@@ -1156,33 +1156,6 @@ describe("RetireToucanCarbon", async () => {
     const tco2Instance = await ToucanCarbonOffsets.attach(deployedErc20_2);
     const balance = await tco2Instance.balanceOf(account6.address);
 
-    // await tco2Instance
-    //   .connect(account6)
-    //   .approve(baseCarbonTonneInstance.address, balance);
-
-    // await baseCarbonTonneInstance
-    //   .connect(account6)
-    //   .deposit(deployedErc20, balance);
-
-    // await usdcDexInstance.setMint(
-    //   testUniswapInstance.address,
-    //   ethers.utils.parseUnits("20000", "ether")
-    // );
-
-    // await baseCarbonTonneInstance
-    //   .connect(account6)
-    //   .transfer(
-    //     testUniswapInstance.address,
-    //     ethers.utils.parseUnits("10000", "ether")
-    //   );
-
-    // await testUniswapInstance.addLiquidity(
-    //   usdcDexInstance.address,
-    //   baseCarbonTonneInstance.address,
-    //   ethers.utils.parseUnits("20000", "ether"),
-    //   ethers.utils.parseUnits("10000", "ether")
-    // );
-
     await baseCarbonTonneInstance
       .connect(manager)
       .setTCO2Scoring([deployedErc20_2, deployedErc20]);
@@ -1201,7 +1174,7 @@ describe("RetireToucanCarbon", async () => {
         ethers.utils.parseUnits("10", "ether")
       );
 
-    await retireToucanCarbonInstance
+    let tx = await retireToucanCarbonInstance
       .connect(funder)
       .retire(
         daiDexInstance.address,
@@ -1213,6 +1186,8 @@ describe("RetireToucanCarbon", async () => {
         "beneficiaryString",
         "retirementMessage"
       );
+
+    await expect(tx).to.emit(retireToucanCarbonInstance, "ToucanRetired");
   });
 
   it("write test for retireSpecific", async () => {
