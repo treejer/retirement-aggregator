@@ -4,14 +4,14 @@ const { ethers, upgrades } = require("hardhat");
 
 async function main() {
   const CarbonRetirementsStorage = await hre.ethers.getContractFactory(
-    "CarbonRetirementsStorage",
+    "CarbonRetirementsStorage"
   );
 
   let retireToucanCarbonAddress;
   let carbonRetirementsStorageAddress;
 
   let carbonRetirementsStorage = await CarbonRetirementsStorage.attach(
-    carbonRetirementsStorageAddress,
+    carbonRetirementsStorageAddress
   );
 
   //----------->add helper

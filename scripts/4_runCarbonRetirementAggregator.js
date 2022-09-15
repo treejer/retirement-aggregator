@@ -4,7 +4,7 @@ const { ethers, upgrades } = require("hardhat");
 
 async function main() {
   const CarbonRetirementAggregator = await hre.ethers.getContractFactory(
-    "CarbonRetirementAggregator",
+    "CarbonRetirementAggregator"
   );
 
   let carbonRetirementAggregatorAddress;
@@ -19,7 +19,7 @@ async function main() {
   let nctAddress;
 
   let carbonRetirementAggregator = await CarbonRetirementAggregator.attach(
-    carbonRetirementAggregatorAddress,
+    carbonRetirementAggregatorAddress
   );
 
   //---------> USDC
@@ -31,18 +31,18 @@ async function main() {
   //---------> storage
   await carbonRetirementAggregator.setAddress(
     2,
-    carbonRetirementStorageAddress,
+    carbonRetirementStorageAddress
   );
 
   //-------->addPool
   await carbonRetirementAggratorInstance.addPool(
     bctAddress,
-    retireToucanCarbonAddress,
+    retireToucanCarbonAddress
   );
 
   await carbonRetirementAggratorInstance.addPool(
     nctAddress,
-    retireToucanCarbonAddress,
+    retireToucanCarbonAddress
   );
 }
 

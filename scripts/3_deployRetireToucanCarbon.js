@@ -4,7 +4,7 @@ const { ethers, upgrades } = require("hardhat");
 
 async function main() {
   const RetireToucanCarbon = await hre.ethers.getContractFactory(
-    "RetireToucanCarbon",
+    "RetireToucanCarbon"
   );
 
   console.log("Deploying retireToucanCarbon...");

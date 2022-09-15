@@ -24,7 +24,7 @@ describe("CarbonRetirementsStorage", async () => {
 
     const CarbonRetirementsStorage = await ethers.getContractFactory(
       "CarbonRetirementsStorage",
-      account1,
+      account1
     );
 
     const carbonRetirementsStorageInstance = await upgrades.deployProxy(
@@ -32,7 +32,7 @@ describe("CarbonRetirementsStorage", async () => {
       {
         kind: "uups",
         initializer: "initialize",
-      },
+      }
     );
     await carbonRetirementsStorageInstance.initialize().should.be.rejected;
 
@@ -75,7 +75,7 @@ describe("CarbonRetirementsStorage", async () => {
     assert.equal(
       await carbonRetirementsStorageInstance.isHelperContract(account2.address),
       true,
-      "addHelperContract func is incorrect",
+      "addHelperContract func is incorrect"
     );
 
     await expect(tx1)
@@ -86,7 +86,7 @@ describe("CarbonRetirementsStorage", async () => {
       .connect(account1)
       .addHelperContract(account2.address)
       .should.be.rejectedWith(
-        CarbonRetirementsStorageErrorMsg.CRS_HELPER_ALREADY_ADDED,
+        CarbonRetirementsStorageErrorMsg.CRS_HELPER_ALREADY_ADDED
       );
 
     //-----------test removeHelperContract
@@ -103,7 +103,7 @@ describe("CarbonRetirementsStorage", async () => {
       .connect(account1)
       .removeHelperContract(account3.address)
       .should.be.rejectedWith(
-        CarbonRetirementsStorageErrorMsg.CRS_HELPER_NOT_IN_LIST,
+        CarbonRetirementsStorageErrorMsg.CRS_HELPER_NOT_IN_LIST
       );
 
     //-------------work successfully
@@ -118,7 +118,7 @@ describe("CarbonRetirementsStorage", async () => {
     assert.equal(
       await carbonRetirementsStorageInstance.isHelperContract(account2.address),
       false,
-      "removeHelperContract func is incorrect",
+      "removeHelperContract func is incorrect"
     );
   });
 
@@ -141,7 +141,7 @@ describe("CarbonRetirementsStorage", async () => {
       .connect(account3)
       .carbonRetired(account4.address, ethers.utils.parseUnits("1", "ether"))
       .should.be.rejectedWith(
-        CarbonRetirementsStorageErrorMsg.CRS_CALLER_NOT_HELPER,
+        CarbonRetirementsStorageErrorMsg.CRS_CALLER_NOT_HELPER
       );
 
     //-------reject (caller not helper)
@@ -149,7 +149,7 @@ describe("CarbonRetirementsStorage", async () => {
       .connect(account1)
       .carbonRetired(account4.address, ethers.utils.parseUnits("1", "ether"))
       .should.be.rejectedWith(
-        CarbonRetirementsStorageErrorMsg.CRS_CALLER_NOT_HELPER,
+        CarbonRetirementsStorageErrorMsg.CRS_CALLER_NOT_HELPER
       );
 
     //-------work successfully
@@ -159,10 +159,10 @@ describe("CarbonRetirementsStorage", async () => {
 
     assert.equal(
       Number(
-        await carbonRetirementsStorageInstance.retirements(account4.address),
+        await carbonRetirementsStorageInstance.retirements(account4.address)
       ),
       Number(ethers.utils.parseUnits("1", "ether")),
-      "carbonRetired func is not correct",
+      "carbonRetired func is not correct"
     );
 
     await carbonRetirementsStorageInstance
@@ -171,10 +171,10 @@ describe("CarbonRetirementsStorage", async () => {
 
     assert.equal(
       Number(
-        await carbonRetirementsStorageInstance.retirements(account4.address),
+        await carbonRetirementsStorageInstance.retirements(account4.address)
       ),
       Number(ethers.utils.parseUnits("1.5", "ether")),
-      "carbonRetired func is not correct",
+      "carbonRetired func is not correct"
     );
   });
 

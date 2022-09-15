@@ -4,7 +4,7 @@ const { ethers, upgrades } = require("hardhat");
 
 async function main() {
   const CarbonRetirementsStorage = await hre.ethers.getContractFactory(
-    "CarbonRetirementsStorage",
+    "CarbonRetirementsStorage"
   );
 
   console.log("Deploying carbonRetirementsStorage...");
@@ -14,14 +14,14 @@ async function main() {
     {
       kind: "uups",
       initializer: "initialize",
-    },
+    }
   );
 
   await carbonRetirementsStorage.deployed();
 
   console.log(
     "carbonRetirementsStorage deployed to:",
-    carbonRetirementsStorage.address,
+    carbonRetirementsStorage.address
   );
 }
 

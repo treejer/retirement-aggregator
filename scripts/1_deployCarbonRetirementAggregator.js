@@ -4,7 +4,7 @@ const { ethers, upgrades } = require("hardhat");
 
 async function main() {
   const CarbonRetirementAggregator = await hre.ethers.getContractFactory(
-    "CarbonRetirementAggregator",
+    "CarbonRetirementAggregator"
   );
 
   console.log("Deploying carbonRetirementAggregator...");
@@ -14,14 +14,14 @@ async function main() {
     {
       kind: "uups",
       initializer: "initialize",
-    },
+    }
   );
 
   await carbonRetirementAggregator.deployed();
 
   console.log(
     "carbonRetirementAggregator deployed to:",
-    carbonRetirementAggregator.address,
+    carbonRetirementAggregator.address
   );
 }
 

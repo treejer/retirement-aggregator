@@ -4,7 +4,7 @@ const { ethers, upgrades } = require("hardhat");
 
 async function main() {
   const RetireToucanCarbon = await hre.ethers.getContractFactory(
-    "RetireToucanCarbon",
+    "RetireToucanCarbon"
   );
 
   let carbonRetirementAggregatorAddress;
@@ -18,7 +18,7 @@ async function main() {
   let toucanRegistryAddress;
 
   let retireToucanCarbon = await RetireToucanCarbon.attach(
-    retireToucanCarbonAddress,
+    retireToucanCarbonAddress
   );
 
   //----------------> feeAmount
@@ -27,7 +27,7 @@ async function main() {
   //----------------> masterAggregator
 
   await retireToucanCarbon.setMasterAggregator(
-    carbonRetirementAggregatorAddress,
+    carbonRetirementAggregatorAddress
   );
 
   //-------------> add PoolRouter
