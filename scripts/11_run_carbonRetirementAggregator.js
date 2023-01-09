@@ -7,26 +7,34 @@ async function main() {
     "CarbonRetirementAggregator"
   );
 
-  let carbonRetirementAggregatorAddress;
-  let retireToucanCarbonAddress;
-  let carbonRetirementStorageAddress;
+  let carbonRetirementAggregatorAddress =
+    process.env.CARBON_RETIREMENT_AGGREGATOR_ADDRESS;
 
-  let usdcAddress;
+  let retireToucanCarbonAddress = process.env.RETIRE_TOUCAN_CARBON_ADDRESS;
+  let carbonRetirementStorageAddress =
+    process.env.CARBON_RETIREMENT_STORAGE_ADDRESS;
 
-  let treasuryAddress;
+  const usdcAddress = process.env.USDC_TOKEN_ADDRESS;
 
-  let bctAddress;
-  let nctAddress;
+  let treasuryAddress = process.env.FEE_TREASURY;
+
+  let bctAddress = process.env.BCT_ADDRESS;
+  // let nctAddress = process.env.NCT_ADDRESS;
 
   let carbonRetirementAggregator = await CarbonRetirementAggregator.attach(
     carbonRetirementAggregatorAddress
   );
 
+  console.log(1);
   //---------> USDC
   await carbonRetirementAggregator.setAddress(0, usdcAddress);
 
+  console.log(2);
+
   //---------> treasury
   await carbonRetirementAggregator.setAddress(1, treasuryAddress);
+
+  console.log(3);
 
   //---------> storage
   await carbonRetirementAggregator.setAddress(
@@ -34,16 +42,18 @@ async function main() {
     carbonRetirementStorageAddress
   );
 
-  //-------->addPool
-  await carbonRetirementAggratorInstance.addPool(
+  console.log(4);
+
+  //  -------->addPool
+  await carbonRetirementAggregator.addPool(
     bctAddress,
     retireToucanCarbonAddress
   );
 
-  await carbonRetirementAggratorInstance.addPool(
-    nctAddress,
-    retireToucanCarbonAddress
-  );
+  // await carbonRetirementAggregator.addPool(
+  //   nctAddress,
+  //   retireToucanCarbonAddress
+  // );
 }
 
 main().catch((error) => {

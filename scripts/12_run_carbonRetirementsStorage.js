@@ -7,17 +7,16 @@ async function main() {
     "CarbonRetirementsStorage"
   );
 
-  let retireToucanCarbonAddress;
-  let carbonRetirementsStorageAddress;
+  let retireToucanCarbonAddress = process.env.RETIRE_TOUCAN_CARBON_ADDRESS;
+  let carbonRetirementsStorageAddress =
+    process.env.CARBON_RETIREMENT_STORAGE_ADDRESS;
 
   let carbonRetirementsStorage = await CarbonRetirementsStorage.attach(
     carbonRetirementsStorageAddress
   );
 
   //----------->add helper
-  await carbonRetirementsStorage
-    .connect(account1)
-    .addHelperContract(retireToucanCarbonAddress);
+  await carbonRetirementsStorage.addHelperContract(retireToucanCarbonAddress);
 }
 
 main().catch((error) => {
